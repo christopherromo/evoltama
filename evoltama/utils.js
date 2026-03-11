@@ -1,17 +1,17 @@
 /*
-  This file contains utility functions that are used in the game.
+  this file contains utility functions that are used in the game.
 */
 
 const utils = {
-  // Returns value in grid scale
+  // returns value in grid scale
   withGrid(n) {
     return n * 16;
   },
-  // Returns coordinates in grid scale
+  // returns coordinates in grid scale
   asGridCoord(x, y) {
     return `${x * 16},${y * 16}`;
   },
-  // Returns coordinates for the next position
+  // returns coordinates for the next position
   nextPosition(initialX, initialY, direction) {
     let x = initialX;
     let y = initialY;
@@ -27,7 +27,7 @@ const utils = {
     }
     return { x, y };
   },
-  // Returns the opposite direction
+  // returns the opposite direction
   oppositeDirection(direction) {
     if (direction === "left") {
       return "right";
@@ -53,7 +53,7 @@ const utils = {
     return array[Math.floor(Math.random() * array.length)];
   },
 
-  // Starts an event based on the argument
+  // starts an event based on the argument
   emitEvent(name, detail) {
     const event = new CustomEvent(name, {
       detail,

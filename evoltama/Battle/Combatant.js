@@ -1,5 +1,5 @@
 /*
-  This file contains the Combatant class, which is used to create combatants in the game.
+  this file contains the Combatant class, which is used to create combatants in the game.
 */
 
 class Combatant {
@@ -9,7 +9,7 @@ class Combatant {
     });
     this.level = config.level || 1;
 
-    // Apply scaling to maxHp before setting hp
+    // apply scaling to maxHp before setting hp
     const baseHp = config.maxHp || 100;
     this.maxHp = Math.floor(baseHp + (this.level - 1) * 5);
     this.hp = typeof config.hp === "undefined" ? this.maxHp : config.hp;
@@ -18,18 +18,18 @@ class Combatant {
     this.isMutated = false;
   }
 
-  // Getter for hp percentage
+  // getter for hp percentage
   get hpPercent() {
     const percent = (this.hp / this.maxHp) * 100;
     return percent > 0 ? percent : 0;
   }
 
-  // Getter for xp percentage
+  // getter for xp percentage
   get xpPercent() {
     return (this.xp / this.maxXp) * 100;
   }
 
-  // Getter for active combatant
+  // getter for active combatant
   get isActive() {
     return this.battle?.activeCombatants[this.team] === this.id;
   }
@@ -46,9 +46,9 @@ class Combatant {
     );
   }
 
-  // Create the element
+  // create the element
   createElement() {
-    // Draw the hud element
+    // draw the hud element
     this.hudElement = document.createElement("div");
     this.hudElement.classList.add("Combatant");
     this.hudElement.setAttribute("data-combatant", this.id);
@@ -67,7 +67,7 @@ class Combatant {
             </svg>
             <p class="Combatant_status"></p>
         `;
-    // Create the image manually and store it
+    // create the image manually and store it
     this.spriteImg = document.createElement("img");
     this.spriteImg.classList.add("Combatant_character");
     this.spriteImg.alt = this.name;
@@ -77,48 +77,48 @@ class Combatant {
     cropDiv.classList.add("Combatant_character_crop");
     cropDiv.appendChild(this.spriteImg);
 
-    // Append cropDiv into this.hudElement
+    // append cropDiv into this.hudElement
     this.hudElement.appendChild(cropDiv);
 
-    // Draw the evolisk element
+    // draw the evolisk element
     this.evoliskElement = document.createElement("img");
     this.evoliskElement.classList.add("Evolisk");
     this.evoliskElement.setAttribute("src", this.src);
     this.evoliskElement.setAttribute("alt", this.name);
     this.evoliskElement.setAttribute("data-team", this.team);
 
-    // Draw the hp and xp fills
+    // draw the hp and xp fills
     this.hpFills = this.hudElement.querySelectorAll(
-      ".Combatant_life-container > rect"
+      ".Combatant_life-container > rect",
     );
     this.xpFills = this.hudElement.querySelectorAll(
-      ".Combatant_xp-container > rect"
+      ".Combatant_xp-container > rect",
     );
   }
 
   update(changes = {}) {
-    // Update anything incoming
+    // update anything incoming
     Object.keys(changes).forEach((key) => {
       this[key] = changes[key];
     });
 
-    // Update active flag to show correct evolisk & hud
+    // update active flag to show correct evolisk & hud
     this.hudElement.setAttribute("data-active", this.isActive);
     this.evoliskElement.setAttribute("data-active", this.isActive);
 
-    // Update sprite image if src changed
+    // update sprite image if src changed
     if (this.spriteImg && this.src) {
       this.spriteImg.src = this.src + `?v=${Date.now()}`; // force reload to bust cache
     }
 
-    // Update hp & xp percent fills
+    // update hp & xp percent fills
     this.hpFills.forEach((rect) => (rect.style.width = `${this.hpPercent}%`));
     this.xpFills.forEach((rect) => (rect.style.width = `${this.xpPercent}%`));
 
-    // Update level on screen
+    // update level on screen
     this.hudElement.querySelector(".Combatant_level").innerText = this.level;
 
-    // Update status
+    // update status
     const statusElement = this.hudElement.querySelector(".Combatant_status");
     if (this.status) {
       statusElement.innerText = this.status.type;
@@ -160,7 +160,7 @@ class Combatant {
     if (this.status && this.status.expiresIn > 0) {
       this.status.expiresIn -= 1;
       if (this.status.expiresIn === 0) {
-        const expiredStatus = this.status.type; // Save the status type before clearing
+        const expiredStatus = this.status.type; // save the status type before clearing
         this.update({
           status: null,
         });
@@ -186,17 +186,17 @@ class Combatant {
     this.isMutated = true;
     this.name += " (Mutated)";
 
-    // Persist mutation to playerState if it exists
+    // persist mutation to playerState if it exists
     const evoliskData = window.playerState?.evolisks?.[this.id];
     if (evoliskData) {
       evoliskData.isMutated = true;
       evoliskData.src = this.mutatedSrc;
     }
 
-    this.update(); // Force UI refresh
+    this.update(); // force UI refresh
   }
 
-  // Calls class functions
+  // calls class functions
   init(container) {
     this.createElement();
     container.appendChild(this.hudElement);

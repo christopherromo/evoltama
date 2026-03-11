@@ -1,6 +1,6 @@
 /*
-  This file is the entry point for the game. It initializes the Overworld class and starts the game.
-  Our game closely follows this guide for most of it's functionality:
+  this file is the entry point for the game. it initializes the Overworld class and starts the game.
+  our game closely follows this guide for most of it's functionality:
   https://www.youtube.com/playlist?list=PLcjhmZ8oLT0r9dSiIK6RB_PuBWlG1KSq_
 */
 

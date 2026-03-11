@@ -1,5 +1,5 @@
 /*
-  This file contains the TitleScreen class, which is used to display the title screen of the game.
+  this file contains the TitleScreen class, which is used to display the title screen of the game.
 */
 
 class TitleScreen {

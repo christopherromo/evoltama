@@ -1,5 +1,5 @@
 /*
-  This file contains the EvoliskMenu class, which is used to manage the evolisk menu in the game.
+  this file contains the EvoliskMenu class, which is used to manage the evolisk menu in the game.
 */
 
 class EvoliskMenu {

@@ -1,5 +1,5 @@
 /*
-  This file contains the BattleEvent class, which is used to manage events in the battle.
+  this file contains the BattleEvent class, which is used to manage events in the battle.
 */
 
 class BattleEvent {
@@ -27,7 +27,7 @@ class BattleEvent {
     const { caster, target, damage, recover, status, action } = this.event;
     let who = this.event.onCaster ? caster : target;
 
-    //  Dodge check
+    // dodge check
     if (damage && target.status?.type === "evade") {
       const dodgeMessage = new TextMessage({
         text: `${target.name} dodged the attack!`,
@@ -47,7 +47,7 @@ class BattleEvent {
     if (damage) {
       let scaledDamage = damage;
 
-      // If caster exists and has a level, scale damage based on level
+      // if caster exists and has a level, scale damage based on level
       if (caster?.level) {
         scaledDamage = Math.floor(damage + (caster.level - 1) * 5);
       }
@@ -100,7 +100,7 @@ class BattleEvent {
         return c.id !== caster.id && c.team === caster.team && c.hp > 0;
       }),
       onComplete: (submission) => {
-        // Submission { what move to use, who to use it on }
+        // submission { what move to use, who to use it on }
         resolve(submission);
       },
     });
@@ -122,19 +122,19 @@ class BattleEvent {
   async replace(resolve) {
     const { replacement } = this.event;
 
-    // Clear out the old combatant
+    // clear out the old combatant
     const prevCombatant =
       this.battle.combatants[this.battle.activeCombatants[replacement.team]];
     this.battle.activeCombatants[replacement.team] = null;
     prevCombatant.update();
     await utils.wait(400);
 
-    // In with the new!
+    // in with the new!
     this.battle.activeCombatants[replacement.team] = replacement.id;
     replacement.update();
     await utils.wait(400);
 
-    // Update Team Components
+    // update team components
     this.battle.playerTeam.update();
     this.battle.enemyTeam.update();
 
@@ -149,17 +149,17 @@ class BattleEvent {
         amount -= 1;
         combatant.xp += 1;
 
-        // Check if we've hit level up point
+        // check if we've hit level up point
         if (combatant.xp === combatant.maxXp) {
           combatant.xp = 0;
           combatant.maxXp = 50;
           combatant.level += 1;
 
-          // Show level up message
+          // show level up message
           await new Promise((res) => {
             const levelUpEvent = new BattleEvent(
               { type: "textMessage", text: `${combatant.name} leveled up!` },
-              this.battle
+              this.battle,
             );
             levelUpEvent.init(res);
           });
@@ -167,7 +167,7 @@ class BattleEvent {
           if (combatant.canMutate && Math.random() < 0.5) {
             combatant.mutate();
 
-            // Persist it to playerState
+            // persist it to playerState
             const evoliskData = window.playerState.evolisks[combatant.id];
             if (evoliskData) {
               evoliskData.isMutated = true;
@@ -177,7 +177,7 @@ class BattleEvent {
             await new Promise((res) => {
               const mutationEvent = new BattleEvent(
                 { type: "textMessage", text: `${combatant.name} has mutated!` },
-                this.battle
+                this.battle,
               );
               mutationEvent.init(res);
             });
@@ -201,7 +201,7 @@ class BattleEvent {
 
   attemptCatch(resolve) {
     const enemyTeam = Object.keys(this.battle.activeCombatants).find(
-      (team) => team !== "player"
+      (team) => team !== "player",
     );
     const enemyId = this.battle.activeCombatants[enemyTeam];
     const target = this.battle.combatants[enemyId];
@@ -269,7 +269,7 @@ class BattleEvent {
 
     container.appendChild(popup);
 
-    // Animate popup appearance
+    // animate popup appearance
     popup.classList.add("pop-in");
 
     setTimeout(() => {
@@ -280,9 +280,9 @@ class BattleEvent {
           popup.remove();
           resolve({ caught: true });
         },
-        { once: true }
+        { once: true },
       );
-    }, 1500); // Show for 1.5 seconds
+    }, 1500); // show for 1.5 seconds
   }
 
   init(resolve) {

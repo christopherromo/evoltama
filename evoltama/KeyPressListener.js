@@ -1,40 +1,40 @@
 /*
-  This file contains the KeyPressListener class, which is used to listen for key presses in the game.
+  this file contains the KeyPressListener class, which is used to listen for key presses in the game.
 */
 
 class KeyPressListener {
   constructor(keyCode, callback) {
-    // Will be disabled until key is released
+    // will be disabled until key is released
     let keySafe = true;
 
-    // Key is pressed
+    // key is pressed
     this.keydownFunction = function (event) {
-      // If code matches the key code passed in
+      // if code matches the key code passed in
       if (event.code === keyCode) {
-        // Key is free
+        // key is free
         if (keySafe) {
-          // Disable
+          // disable
           keySafe = false;
           callback();
         }
       }
     };
 
-    // Key is released
+    // key is released
     this.keyupFunction = function (event) {
-      // If code matched the key code passed in
+      // if code matched the key code passed in
       if (event.code === keyCode) {
-        // Enable
+        // enable
         keySafe = true;
       }
     };
 
-    // Event listeners
+    // event listeners
     document.addEventListener("keydown", this.keydownFunction);
     document.addEventListener("keyup", this.keyupFunction);
   }
 
-  // Once finished, remove event listeners
+  // once finished, remove event listeners
   unbind() {
     document.removeEventListener("keydown", this.keydownFunction);
     document.removeEventListener("keyup", this.keyupFunction);

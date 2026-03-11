@@ -1,5 +1,5 @@
 /*
-  This file contains the enemies data for the game.
+  this file contains the enemies data for the game.
 */
 
 window.Enemies = {

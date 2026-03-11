@@ -1,5 +1,5 @@
 /*
-  This file contains the styles for the Combatant component.
+  this file contains the styles for the Combatant component.
 */
 
 .Combatant {
@@ -131,7 +131,9 @@
 .Evolisk {
   position: absolute;
   transform: scale(2);
-  transition: opacity 0.4s, transform 0.4s;
+  transition:
+    opacity 0.4s,
+    transform 0.4s;
   background: url(../images/characters/evolisks/evolisk-shadow.png) no-repeat
     no-repeat;
 }

@@ -1,5 +1,5 @@
 /*
-  This file contains the styles for the KeyboardMenu component.
+  this file contains the styles for the KeyboardMenu component.
 */
 
 .KeyboardMenu {
@@ -49,26 +49,26 @@
   bottom: 0;
   left: 0;
   right: 0;
-  max-height: 40px; /* Smaller height to stay above the menu */
+  max-height: 40px; /* smaller height to stay above the menu */
   overflow-y: auto;
   color: var(--menu-font-color);
   border-top: 1px solid var(--border-color);
   background: var(--menu-background);
   padding: 2px;
-  z-index: 5; /* Ensure it's above other background layers */
+  z-index: 5; /* ensure it's above other background layers */
 }
 
 .DescriptionBox p {
   font-size: 10px;
   margin: 0;
-  white-space: normal; /* Allows wrapping */
-  word-wrap: break-word; /* Wraps long words too */
+  white-space: normal; /* allows wrapping */
+  word-wrap: break-word; /* wraps long words too */
 }
 
-/* Battle specific */
+/* battle specific */
 .Battle .KeyboardMenu {
   right: 0;
-  bottom: 40px; /* Push the menu UP so it's not sitting on top of DescriptionBox */
+  bottom: 40px; /* push the menu up so it's not sitting on top of DescriptionBox */
   width: 140px;
   z-index: 10;
 }

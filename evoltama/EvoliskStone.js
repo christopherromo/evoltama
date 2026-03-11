@@ -1,5 +1,5 @@
 /*
-  This file contains the EvoliskStone class, which is used to manage the Evolisk stone in the game.
+  this file contains the EvoliskStone class, which is used to manage the evolisk stone in the game.
 */
 
 class EvoliskStone extends GameObject {

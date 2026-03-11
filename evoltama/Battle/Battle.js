@@ -1,5 +1,5 @@
 /*
-  This file contains the Battle class, which is used to manage battles in the game.
+  this file contains the Battle class, which is used to manage battles in the game.
 */
 
 class Battle {
@@ -29,20 +29,20 @@ class Battle {
       enemy: null, // "enemy1",
     };
 
-    // Dynamically add the player team
+    // dynamically add the player team
     window.playerState.lineup.forEach((id) => {
       this.addCombatant(id, "player", window.playerState.evolisks[id]);
     });
 
-    // Now the enemy team
+    // now the enemy team
     Object.keys(this.enemy.evolisks).forEach((key) => {
       this.addCombatant("e_" + key, "enemy", { ...this.enemy.evolisks[key] });
     });
 
-    // Start empty
+    // start empty
     this.items = [];
 
-    // Add in player items
+    // add in player items
     window.playerState.items.forEach((item) => {
       this.items.push({
         ...item,
@@ -54,11 +54,11 @@ class Battle {
   }
 
   addCombatant(id, team, config) {
-    // If it's a wild encounter, and the combatant is a person (trainer), skip adding it
+    // if it's a wild encounter, and the combatant is a person (trainer), skip adding it
     const isTrainerEvolisk = this.isWildEncounter && config.isPerson;
 
     if (isTrainerEvolisk) {
-      return; // Skip adding trainer's Evolisk
+      return; // skip adding trainer's evolisk
     }
 
     if (config.isMutated && config.mutatedSrc) {
@@ -71,15 +71,15 @@ class Battle {
         ...config,
         team,
         isPlayerControlled: team === "player",
-        isPerson: false, // Ensure that trainers are marked correctly
+        isPerson: false, // ensure that trainers are marked correctly
       },
-      this
+      this,
     );
 
     if (!this.activeCombatants[team]) {
       const firstHealthyId = Object.keys(this.combatants).filter(
         (cid) =>
-          this.combatants[cid].team === team && this.combatants[cid].hp > 0
+          this.combatants[cid].team === team && this.combatants[cid].hp > 0,
       )[0];
       if (firstHealthyId) {
         this.activeCombatants[team] = firstHealthyId;
@@ -87,7 +87,7 @@ class Battle {
     }
   }
 
-  // Draw the battle element (hero and enemy)
+  // draw the battle element (hero and enemy)
   createElement() {
     this.element = document.createElement("div");
     this.element.classList.add("Battle");
@@ -96,7 +96,7 @@ class Battle {
       this.element.style.backgroundImage = `url(${this.battleBackgroundSrc})`;
     }
 
-    // Only show the trainer if NOT a wild battle
+    // only show the trainer if not a wild battle
     let enemyHTML = "";
     if (!this.isWildEncounter) {
       enemyHTML = `
@@ -125,7 +125,7 @@ class Battle {
       let combatant = this.combatants[key];
       combatant.id = key;
 
-      //  Skip mounting enemy Person if this is a wild encounter
+      //  skip mounting enemy person if this is a wild encounter
       if (
         this.isWildEncounter &&
         combatant.team === "enemy" &&
@@ -149,12 +149,12 @@ class Battle {
     this.playerTeam.init(this.element);
     this.enemyTeam.init(this.element);
 
-    // Set the first active player Evolisk
+    // set the first active player evolisk
     this.activeCombatants = {
       player: this.playerTeam.getFirstAlive(),
     };
 
-    // For wild encounters, find the enemy differently
+    // for wild encounters, find the enemy differently
     if (this.isWildEncounter) {
       const enemyIds = Object.keys(this.combatants).filter((id) => {
         return this.combatants[id].team !== "player";

@@ -1,5 +1,5 @@
 /*
-  This file contains the PlayerState class, which is used to manage the player's state in the game.
+  this file contains the PlayerState class, which is used to manage the player's state in the game.
 */
 
 class PlayerState {

@@ -1,10 +1,10 @@
 /*
-  This file contains the KeyboardMenu class, which is used to create a menu that can be navigated using the keyboard.
+  this file contains the KeyboardMenu class, which is used to create a menu that can be navigated using the keyboard.
 */
 
 class KeyboardMenu {
   constructor(config = {}) {
-    this.options = []; // Set by updater method
+    this.options = []; // set by updater method
     this.up = null;
     this.down = null;
     this.prevFocus = null;
@@ -19,8 +19,8 @@ class KeyboardMenu {
         return `
                 <div class="option">
                 <button ${disabledAttr} data-button="${index}" data-description="${
-          option.description
-        }">
+                  option.description
+                }">
                 ${option.label}
                 </button>
                 <span class="right">${option.right ? option.right() : ""}</span>
@@ -52,7 +52,7 @@ class KeyboardMenu {
     this.element = document.createElement("div");
     this.element.classList.add("KeyboardMenu");
 
-    // Description Box Element
+    // description box element
     this.descriptionElement = document.createElement("div");
     this.descriptionElement.classList.add("DescriptionBox");
     this.descriptionElement.innerHTML = `<p>I will provide information!</p>`;
@@ -60,11 +60,11 @@ class KeyboardMenu {
   }
 
   end() {
-    // Remove menu element and description element
+    // remove menu element and description element
     this.element.remove();
     this.descriptionElement.remove();
 
-    // Clean Up Bindings
+    // clean up bindings
     this.up.unbind();
     this.down.unbind();
   }
@@ -72,14 +72,14 @@ class KeyboardMenu {
   init(container) {
     this.createElement();
     (this.descriptionContainer || container).appendChild(
-      this.descriptionElement
+      this.descriptionElement,
     );
     container.appendChild(this.element);
 
     this.up = new KeyPressListener("ArrowUp", () => {
       const current = Number(this.prevFocus.getAttribute("data-button"));
       const prevButton = Array.from(
-        this.element.querySelectorAll("button[data-button]")
+        this.element.querySelectorAll("button[data-button]"),
       )
         .reverse()
         .find((el) => {
@@ -90,7 +90,7 @@ class KeyboardMenu {
     this.down = new KeyPressListener("ArrowDown", () => {
       const current = Number(this.prevFocus.getAttribute("data-button"));
       const nextButton = Array.from(
-        this.element.querySelectorAll("button[data-button]")
+        this.element.querySelectorAll("button[data-button]"),
       ).find((el) => {
         return el.dataset.button > current && !el.disabled;
       });

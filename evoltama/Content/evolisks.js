@@ -1,16 +1,16 @@
 /*
-  This file contains the creatures used in the game.
+  this file contains the creatures used in the game.
 */
 
 window.EvoliskTypes = {
-  // Evolisk Types
+  // evolisk types
   Shadow: "shadow",
   Mythic: "mythic",
   Naturalist: "naturalist",
 };
 
 window.Evolisks = {
-  // Enemy Evolisks
+  // enemy evolisks
   ee001: {
     name: "Luxigon",
     description: "A dark but loyal Evolisk.",
@@ -86,7 +86,7 @@ window.Evolisks = {
     actions: ["thunderJolt", "windCutter", "galeBurst"],
   },
 
-  // Player Evolisks
+  // player evolisks
   ep001: {
     name: "Luxigon",
     description: "A dark but loyal Evolisk.",

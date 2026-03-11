@@ -1,29 +1,29 @@
 /*
-  This file contains the Sprite class, which is used to render sprites in the game.
+  this file contains the Sprite class, which is used to render sprites in the game.
 */
 
 class Sprite {
   constructor(config) {
-    // Set up the image
+    // set up the image
     this.image = new Image();
     this.image.src = config.src;
     this.image.onload = () => {
       this.isLoaded = true;
     };
 
-    // Set up the shadow
+    // set up the shadow
     this.shadow = new Image();
     this.useShadow = true; // config.useShadow || false
     if (this.useShadow) {
       this.shadow.src = "./images/characters/shadow.png";
     }
 
-    // Check for shadow
+    // check for shadow
     this.shadow.onload = () => {
       this.isShadowLoaded = true;
     };
 
-    // Configure animation & initial state
+    // configure animation & initial state
     this.animations = config.animations || {
       "idle-down": [[0, 0]],
       "idle-right": [[0, 1]],
@@ -60,16 +60,16 @@ class Sprite {
     this.animationFrameLimit = config.animationFrameLimit || 8;
     this.animationFrameProgress = this.animationFrameLimit;
 
-    // Reference the game object
+    // reference the game object
     this.gameObject = config.gameObject;
   }
 
-  // Get the current frame
+  // get the current frame
   get frame() {
     return this.animations[this.currentAnimation][this.currentAnimationFrame];
   }
 
-  // Set an animation
+  // set an animation
   setAnimation(key) {
     if (this.currentAnimation !== key) {
       this.currentAnimation = key;
@@ -79,13 +79,13 @@ class Sprite {
   }
 
   updateAnimationProgress() {
-    // Downtick frame progress
+    // downtick frame progress
     if (this.animationFrameProgress > 0) {
       this.animationFrameProgress -= 1;
       return;
     }
 
-    // Reset the counter
+    // reset the counter
     this.animationFrameProgress = this.animationFrameLimit;
     this.currentAnimationFrame += 1;
 
@@ -94,7 +94,7 @@ class Sprite {
     }
   }
 
-  // Draw the sprite
+  // draw the sprite
   draw(ctx, cameraPerson) {
     const x = this.gameObject.x - 8 + utils.withGrid(10.5) - cameraPerson.x;
     const y = this.gameObject.y - 18 + utils.withGrid(6) - cameraPerson.y;

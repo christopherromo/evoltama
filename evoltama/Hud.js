@@ -1,5 +1,5 @@
 /*
-  This file contains the Hud class, which is responsible for creating and updating the HUD (Heads-Up Display) for the game.
+  this file contains the Hud class, which is responsible for creating and updating the hud (heads-up display) for the game.
 */
 
 class Hud {
@@ -30,7 +30,7 @@ class Hud {
           ...Evolisks[evolisk.evoliskId],
           ...evolisk,
         },
-        null
+        null,
       );
       scoreboard.createElement();
       this.scoreboards.push(scoreboard);

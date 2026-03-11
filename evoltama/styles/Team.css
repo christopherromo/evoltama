@@ -1,5 +1,5 @@
 /*
-  This file contains the styles for the Team component.
+  this file contains the styles for the Team component.
 */
 
 .Team {
@@ -17,7 +17,7 @@
   right: 4px;
 }
 
-/* Start stateful paths as display:none */
+/* start stateful paths as display:none */
 .Team .dead-evolisk {
   display: none;
 }
@@ -26,7 +26,7 @@
   display: none;
 }
 
-/* Display them as opted in by data-attributes */
+/* display them as opted in by data-attributes */
 .Team [data-dead="true"] .dead-evolisk {
   display: block;
 }

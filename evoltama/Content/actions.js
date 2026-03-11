@@ -1,9 +1,9 @@
 /*
-  This file contains the actions that can be performed in the game.
+  this file contains the actions that can be performed in the game.
 */
 
 window.Actions = {
-  // Attacks
+  // attacks
   phantomCharge: {
     name: "Phantom Charge",
     description:
@@ -187,7 +187,7 @@ window.Actions = {
     ],
   },
 
-  // Items
+  // items
   item_recoverStatus: {
     name: "Heating Lamp",
     description:
@@ -210,7 +210,7 @@ window.Actions = {
     ],
   },
 
-  // Attempt to Capture a Wild Evolisk
+  // attempt to capture a wild evolisk
   catchDisc: {
     name: "Capture Disc",
     description: "Throw a capture disc to try and catch the wild Evolisk.",

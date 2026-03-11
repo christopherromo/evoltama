@@ -1,5 +1,5 @@
 /*
-  This file contains the RevealingText class, which is used to reveal text in the game.
+  this file contains the RevealingText class, which is used to reveal text in the game.
 */
 
 class RevealingText {
@@ -12,7 +12,7 @@ class RevealingText {
     this.isDone = false;
   }
 
-  // Takes in a list and reveals each character
+  // takes in a list and reveals each character
   revealOneCharacter(list) {
     const next = list.splice(0, 1)[0];
     next.span.classList.add("revealed");
@@ -26,7 +26,7 @@ class RevealingText {
     }
   }
 
-  // Reveals the entire message
+  // reveals the entire message
   warpToDone() {
     clearTimeout(this.timeout);
     this.isDone = true;
@@ -35,16 +35,16 @@ class RevealingText {
     });
   }
 
-  // Calls class functions
+  // calls class functions
   init() {
     let characters = [];
     this.text.split("").forEach((character) => {
-      // Create each span, add to element in DOM
+      // create each span, add to element in dom
       let span = document.createElement("span");
       span.textContent = character;
       this.element.appendChild(span);
 
-      // Add this span to our internal state array
+      // add this span to our internal state array
       characters.push({
         span,
         delayAfter: character === " " ? 0 : this.speed,

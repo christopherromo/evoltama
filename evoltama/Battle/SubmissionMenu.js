@@ -1,5 +1,5 @@
 /*
-  This file contains the SubmissionMenu class, which is used to manage the submission menu in the game.
+  this file contains the SubmissionMenu class, which is used to manage the submission menu in the game.
 */
 
 class SubmissionMenu {
@@ -65,7 +65,7 @@ class SubmissionMenu {
         ...this.caster.actions
           .filter((key) => {
             if (key === "catchNet" && !this.battle.isWildEncounter) {
-              return false; // Hide "Catch Net" if it's not a wild battle
+              return false; // hide "catch net" if it's not a wild battle
             }
             return true;
           })
@@ -103,7 +103,7 @@ class SubmissionMenu {
             label: replacement.name,
             description: replacement.description,
             handler: () => {
-              // Swap me in, coach!
+              // swap me in, coach!
               this.menuSubmitReplacement(replacement);
             },
           };
@@ -165,7 +165,7 @@ class SubmissionMenu {
 
   init(container) {
     if (this.caster.isPlayerControlled) {
-      // Show some UI
+      // show some UI
       this.showMenu(container);
     } else {
       this.decide();

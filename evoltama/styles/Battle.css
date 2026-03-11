@@ -1,5 +1,5 @@
 /*
-  This file contains the styles for the Battle component.
+  this file contains the styles for the Battle component.
 */
 
 .Battle {
@@ -41,7 +41,7 @@
   right: -1px;
 }
 
-/* Animations */
+/* animations */
 @keyframes battle-damage-blink {
   to {
     visibility: hidden;
@@ -394,7 +394,7 @@
   pointer-events: none;
 }
 
-/* Right side animation */
+/* right side animation */
 @keyframes paralyzing-dust-float-right {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -410,7 +410,7 @@
   animation: paralyzing-dust-float-right 0.7s ease-out forwards;
 }
 
-/* Left side animation */
+/* left side animation */
 @keyframes paralyzing-dust-float-left {
   0% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -430,8 +430,8 @@
   position: absolute;
   width: 24px;
   height: 24px;
-  left: 70px; /* Starting X position */
-  top: 100px; /* Starting Y position */
+  left: 70px; /* starting x position */
+  top: 100px; /* starting y position */
   animation: throw-capture-disc 0.7s ease-out forwards;
   pointer-events: none;
   z-index: 10;

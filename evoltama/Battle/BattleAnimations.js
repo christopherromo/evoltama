@@ -1,5 +1,5 @@
 /*
-  This file holds animations for Evolisk attacks.
+  this file holds animations for evolisk attacks.
 */
 
 window.BattleAnimations = {
@@ -15,7 +15,7 @@ window.BattleAnimations = {
         element.classList.remove(animationClassName);
         onComplete();
       },
-      { once: true }
+      { once: true },
     );
 
     await utils.wait(100);
@@ -28,7 +28,7 @@ window.BattleAnimations = {
     div.classList.add(
       caster.team === "player"
         ? "battle-paralyzing-spit-right"
-        : "battle-paralyzing-spit-left"
+        : "battle-paralyzing-spit-left",
     );
 
     div.innerHTML = `
@@ -61,7 +61,7 @@ window.BattleAnimations = {
         element.classList.remove(animationClassName);
         onComplete();
       },
-      { once: true }
+      { once: true },
     );
   },
 
@@ -75,7 +75,7 @@ window.BattleAnimations = {
         element.classList.remove("battle-void-howl");
         onComplete();
       },
-      { once: true }
+      { once: true },
     );
   },
 
@@ -93,7 +93,7 @@ window.BattleAnimations = {
         element.classList.remove(animationClassName);
         onComplete();
       },
-      { once: true }
+      { once: true },
     );
   },
 
@@ -104,7 +104,7 @@ window.BattleAnimations = {
     div.classList.add(
       caster.team === "player"
         ? "battle-vine-whip-right"
-        : "battle-vine-whip-left"
+        : "battle-vine-whip-left",
     );
 
     div.innerHTML = `
@@ -133,7 +133,7 @@ window.BattleAnimations = {
         element.classList.remove("battle-shadow-vanish");
         onComplete();
       },
-      { once: true }
+      { once: true },
     );
   },
 
@@ -151,7 +151,7 @@ window.BattleAnimations = {
         element.classList.remove(animationClassName);
         onComplete();
       },
-      { once: true }
+      { once: true },
     );
   },
 
@@ -165,7 +165,7 @@ window.BattleAnimations = {
       dust.classList.add(
         caster.team === "player"
           ? "battle-paralyzing-dust-right"
-          : "battle-paralyzing-dust-left"
+          : "battle-paralyzing-dust-left",
       );
 
       dust.style.left = `${
@@ -200,7 +200,7 @@ window.BattleAnimations = {
       const star = document.createElement("div");
       star.classList.add("battle-star");
 
-      // Offset starting positions slightly for variety
+      // offset starting positions slightly for variety
       const offsetX = Math.random() * 10 - 5;
       const offsetY = Math.random() * 10 - 5;
 
@@ -246,7 +246,7 @@ window.BattleAnimations = {
     disc.style.transform = "scale(1)";
     container.appendChild(disc);
 
-    // Animate flying toward target
+    // animate flying toward target
     await disc.animate(
       [
         { transform: `translate(0px, 0px) scale(1)` },
@@ -260,10 +260,10 @@ window.BattleAnimations = {
         duration: 500,
         fill: "forwards",
         easing: "ease-out",
-      }
+      },
     ).finished;
 
-    // Bounce animation after landing
+    // bounce animation after landing
     await disc.animate(
       [
         { transform: `scale(1.2) translateY(0px)` },
@@ -273,10 +273,10 @@ window.BattleAnimations = {
       {
         duration: 300,
         easing: "ease-in-out",
-      }
+      },
     ).finished;
 
-    // Now remove disc
+    // now remove disc
     disc.remove();
     onComplete();
   },

@@ -1,5 +1,5 @@
 /*
-  This file contains the Progress class, which is used to manage the game progress and save/load functionality.
+  this file contains the Progress class, which is used to manage the game progress and save/load functionality.
 */
 
 class Progress {
@@ -25,7 +25,7 @@ class Progress {
           items: playerState.items,
           storyFlags: playerState.storyFlags,
         },
-      })
+      }),
     );
   }
 

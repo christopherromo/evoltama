@@ -1,5 +1,5 @@
 /*
-  This file contains the Overworld class, which is used to manage the overworld map.
+  this file contains the Overworld class, which is used to manage the overworld map.
 */
 
 class Overworld {
@@ -11,13 +11,13 @@ class Overworld {
   }
 
   gameLoopStepWork(delta) {
-    // Clear off the canvas
+    // clear off the canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Establish the camera person
+    // establish the camera person
     const cameraPerson = this.map.gameObjects.hero;
 
-    // Update all objects
+    // update all objects
     Object.values(this.map.gameObjects).forEach((object) => {
       object.update({
         delta,
@@ -26,10 +26,10 @@ class Overworld {
       });
     });
 
-    // Draw lower layer
+    // draw lower layer
     this.map.drawLowerImage(this.ctx, cameraPerson);
 
-    // Draw game objects
+    // draw game objects
     Object.values(this.map.gameObjects)
       .sort((a, b) => {
         return a.y - b.y;
@@ -38,11 +38,11 @@ class Overworld {
         object.sprite.draw(this.ctx, cameraPerson);
       });
 
-    // Draw upper layer
+    // draw upper layer
     this.map.drawUpperImage(this.ctx, cameraPerson);
   }
 
-  // Starts the main game loop
+  // starts the main game loop
   startGameLoop() {
     let previousMs;
     const step = 1 / 60;
@@ -62,14 +62,14 @@ class Overworld {
       }
       previousMs = timestampMs - delta * 1000;
 
-      // Business as usual tick
+      // business as usual tick
       requestAnimationFrame(stepFn);
     };
-    // First kickoff tick
+    // first kickoff tick
     requestAnimationFrame(stepFn);
   }
 
-  // Binds the action input
+  // binds the action input
   bindActionInput() {
     new KeyPressListener("Enter", () => {
       this.map.checkForActionCutscene();
@@ -81,7 +81,7 @@ class Overworld {
     });
   }
 
-  // Binds the hero position check
+  // binds the hero position check
   bindHeroPositionCheck() {
     document.addEventListener("PersonWalkingComplete", (e) => {
       if (e.detail.whoId === "hero") {
@@ -91,7 +91,7 @@ class Overworld {
     });
   }
 
-  // Binds the wild encounter check
+  // binds the wild encounter check
   bindWildEncounterCheck() {
     document.addEventListener("WildEncounter", async () => {
       if (!this.map.isCutscenePlaying) {
@@ -100,7 +100,7 @@ class Overworld {
     });
   }
 
-  // Starts the map
+  // starts the map
   startMap(mapConfig, heroInitialState = null) {
     this.map = new OverworldMap(mapConfig);
     this.map.overworld = this;
@@ -119,20 +119,20 @@ class Overworld {
     this.progress.startingHeroDirection = this.map.gameObjects.hero.direction;
   }
 
-  // Initializes the overworld
+  // initializes the overworld
   async init() {
     const container = document.querySelector(".game-container");
 
-    // Create a new Progress tracker
+    // create a new progress tracker
     this.progress = new Progress();
 
-    // Show the Title Screen
+    // show the title screen
     this.titleScreen = new TitleScreen({
       progress: this.progress,
     });
     const useSaveFile = await this.titleScreen.init(container);
 
-    // Potentially Load Saved Data
+    // potentially load saved data
     let initialHeroState = null;
     if (useSaveFile) {
       this.progress.load();
@@ -145,14 +145,14 @@ class Overworld {
       window.playerState.isNewGame = true;
     }
 
-    // Load the HUD
+    // load the hud
     this.hud = new Hud();
     this.hud.init(container);
 
-    // Start the First Map
+    // start the first map
     this.startMap(window.OverworldMaps[this.progress.mapId], initialHeroState);
 
-    // Create Controls
+    // create controls
     this.bindActionInput();
     this.bindHeroPositionCheck();
     this.bindWildEncounterCheck();
@@ -160,7 +160,7 @@ class Overworld {
     this.directionInput = new DirectionInput();
     this.directionInput.init();
 
-    // Start The Game!!
+    // start the game!!
     this.startGameLoop();
 
     // cutscenes to play immediately

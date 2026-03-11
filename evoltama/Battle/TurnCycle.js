@@ -1,5 +1,5 @@
 /*
-  This file contains the TurnCycle class, which is used to manage the turn cycle in the game.
+  this file contains the TurnCycle class, which is used to manage the turn cycle in the game.
 */
 class TurnCycle {
   constructor({ battle, onNewEvent, onWinner, map }) {
@@ -7,11 +7,11 @@ class TurnCycle {
     this.onNewEvent = onNewEvent;
     this.onWinner = onWinner;
     this.map = map;
-    this.currentTeam = "player"; // Or "enemy"
+    this.currentTeam = "player"; // or "enemy"
   }
 
   async turn() {
-    // Get the caster and enemy
+    // get the caster and enemy
     const casterId = this.battle.activeCombatants[this.currentTeam];
     const caster = this.battle.combatants[casterId];
     const enemyId =
@@ -26,7 +26,7 @@ class TurnCycle {
       enemy,
     });
 
-    // Stop here if we are replacing this Evolisk
+    // stop here if we are replacing this evolisk
     if (submission.replacement) {
       await this.onNewEvent({
         type: "replace",
@@ -41,12 +41,12 @@ class TurnCycle {
     }
 
     if (submission.instanceId) {
-      // Add to List to Persist to PlayerState
+      // add to list to persist to PlayerState
       this.battle.usedInstanceIds[submission.instanceId] = true;
 
-      // Removing Item from Battle State
+      // removing item from battle state
       this.battle.items = this.battle.items.filter(
-        (i) => i.instanceId !== submission.instanceId
+        (i) => i.instanceId !== submission.instanceId,
       );
     }
 
@@ -68,7 +68,7 @@ class TurnCycle {
       }
     }
 
-    // Did the target die?
+    // did the target die?
     const targetDead = submission.target.hp <= 0;
     if (targetDead) {
       await this.onNewEvent({
@@ -92,7 +92,7 @@ class TurnCycle {
       }
     }
 
-    // Check if all player Evolisks are fainted
+    // check if all player evolisks are fainted
     const allFainted = Object.values(this.battle.combatants)
       .filter((combatant) => combatant.team === "player")
       .every((combatant) => combatant.hp <= 0);
@@ -100,10 +100,10 @@ class TurnCycle {
     if (allFainted) {
       this.map.teleportToHealingArea();
       this.onWinner("enemy");
-      return; // Stop the turn if all Evolisks faint
+      return; // stop the turn if all evolisks faint
     }
 
-    // Do we have a winning team?
+    // do we have a winning team?
     const winner = this.getWinningTeam();
     if (winner) {
       await this.onNewEvent({
@@ -114,7 +114,7 @@ class TurnCycle {
       return;
     }
 
-    // We have a dead target, but still no winner, so bring in a replacement
+    // we have a dead target, but still no winner, so bring in a replacement
     if (targetDead) {
       const replacement = await this.onNewEvent({
         type: "replacementMenu",
@@ -130,7 +130,7 @@ class TurnCycle {
       });
     }
 
-    // Check for post events (e.g., after effects, statuses)
+    // check for post events (e.g., after effects, statuses)
     const postEvents = caster.getPostEvents();
     for (let i = 0; i < postEvents.length; i++) {
       const event = {
@@ -143,7 +143,7 @@ class TurnCycle {
       await this.onNewEvent(event);
     }
 
-    // Check for status expire (e.g., poison, etc.)
+    // check for status expire (e.g., poison, etc.)
     const expiredEvent = caster.decrementStatus();
     if (expiredEvent) {
       await this.onNewEvent(expiredEvent);
@@ -153,19 +153,19 @@ class TurnCycle {
   }
 
   async teleportToHealingArea() {
-    // Example healing area coordinates (can be adjusted)
-    const healingSpotX = 5; // Change this to your healing area X-coordinate
-    const healingSpotY = 5; // Change this to your healing area Y-coordinate
+    // example healing area coordinates (can be adjusted)
+    const healingSpotX = 5; // change this to your healing area x-coordinate
+    const healingSpotY = 5; // change this to your healing area y-coordinate
 
-    // Teleport the player to the healing area
+    // teleport the player to the healing area
     this.battle.map.gameObjects["hero"].x = healingSpotX * 16; // 16px per tile
     this.battle.map.gameObjects["hero"].y = healingSpotY * 16; // 16px per tile
 
-    // Optionally show a healing message
+    // optionally show a healing message
     const healingMessage = new TextMessage({
       text: "You've been teleported to a healing area to revive your Evolisks.",
       onComplete: () => {
-        // Heal the player's Evolisks
+        // heal the player's evolisks
         this.healPlayerEvolisks();
       },
     });
@@ -175,11 +175,11 @@ class TurnCycle {
   healPlayerEvolisks() {
     const playerState = window.playerState;
 
-    // Restore all Evolisks' HP to full
+    // restore all evolisks' hp to full
     Object.keys(playerState.evolisks).forEach((id) => {
       const combatant = this.battle.combatants[id];
       if (combatant) {
-        combatant.hp = combatant.maxHp; // Full restore
+        combatant.hp = combatant.maxHp; // full restore
       }
     });
   }

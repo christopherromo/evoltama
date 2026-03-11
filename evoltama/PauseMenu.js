@@ -1,5 +1,5 @@
 /*
-  This file contains the PauseMenu class, which is used to manage the pause menu in the game.
+  this file contains the PauseMenu class, which is used to manage the pause menu in the game.
 */
 
 class PauseMenu {
@@ -10,7 +10,7 @@ class PauseMenu {
 
   getOptions(pageKey) {
     if (pageKey === "root") {
-      // Case 1: Show the first page of options
+      // case 1: show the first page of options
       const lineupEvolisks = playerState.lineup.map((id) => {
         const { evoliskId } = playerState.evolisks[id];
         const base = Evolisks[evoliskId];
@@ -42,7 +42,7 @@ class PauseMenu {
       ];
     }
 
-    // Case 2: Show the options for just one Evolisk (by id)
+    // case 2: show the options for just one evolisk (by id)
     const unequipped = Object.keys(playerState.evolisks)
       .filter((id) => {
         return playerState.lineup.indexOf(id) === -1;

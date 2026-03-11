@@ -1,5 +1,5 @@
 /*
-  This file contains the OverworldEvent class, which is used to handle events that occur on the overworld map.
+  this file contains the OverworldEvent class, which is used to handle events that occur on the overworld map.
 */
 
 class OverworldEvent {
@@ -8,7 +8,7 @@ class OverworldEvent {
     this.event = event;
   }
 
-  // When a game object is standing
+  // when a game object is standing
   stand(resolve) {
     const who = this.map.gameObjects[this.event.who];
     who.startBehavior(
@@ -22,7 +22,7 @@ class OverworldEvent {
       }
     );
 
-    // Set up a handler to complete when correct person is done walking, then resolve the event
+    // set up a handler to complete when correct person is done walking, then resolve the event
     const completeHandler = (e) => {
       if (e.detail.whoId === this.event.who) {
         document.removeEventListener("PersonStandComplete", completeHandler);
@@ -32,7 +32,7 @@ class OverworldEvent {
     document.addEventListener("PersonStandComplete", completeHandler);
   }
 
-  // When a game object is walking
+  // when a game object is walking
   walk(resolve) {
     const who = this.map.gameObjects[this.event.who];
     who.startBehavior(
@@ -46,7 +46,7 @@ class OverworldEvent {
       }
     );
 
-    // Set up a handler to complete when correct person is done walking, then resolve the event
+    // set up a handler to complete when correct person is done walking, then resolve the event
     const completeHandler = (e) => {
       if (e.detail.whoId === this.event.who) {
         document.removeEventListener("PersonWalkingComplete", completeHandler);
@@ -56,7 +56,7 @@ class OverworldEvent {
     document.addEventListener("PersonWalkingComplete", completeHandler);
   }
 
-  // Text message that can appear on the screen
+  // text message that can appear on the screen
   textMessage(resolve) {
     if (this.event.faceHero) {
       const obj = this.map.gameObjects[this.event.faceHero];
@@ -78,9 +78,9 @@ class OverworldEvent {
     resolve();
   }
 
-  // Change the current map
+  // change the current map
   changeMap(resolve) {
-    // Deactivate old objects
+    // deactivate old objects
     Object.values(this.map.gameObjects).forEach((obj) => {
       obj.isMounted = false;
     });
@@ -98,7 +98,7 @@ class OverworldEvent {
     });
   }
 
-  // Puts the game into battle mode
+  // puts the game into battle mode
   battle(resolve) {
     const battle = new Battle({
       enemy: Enemies[this.event.enemyId],
@@ -141,9 +141,9 @@ class OverworldEvent {
     menu.init(document.querySelector(".game-container"));
   }
 
-  // Puts the game into a wild battle
+  // puts the game into a wild battle
   async wildBattle(resolve) {
-    // Pick a random wild Evolisk ID
+    // pick a random wild evolisk id
     const wildId = utils.randomFromArray([
       "ee001",
       "ee002",
@@ -186,7 +186,7 @@ class OverworldEvent {
     battle.init(document.querySelector(".game-container"));
   }
 
-  // Initiates the desired event
+  // initiates the desired event
   init() {
     return new Promise((resolve) => {
       this[this.event.type](resolve);

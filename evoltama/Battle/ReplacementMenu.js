@@ -1,5 +1,5 @@
 /*
-  This file contains the ReplacementMenu class, which is used to manage the replacement menu in the game.
+  this file contains the ReplacementMenu class, which is used to manage the replacement menu in the game.
 */
 
 class ReplacementMenu {
@@ -29,7 +29,7 @@ class ReplacementMenu {
             this.menuSubmit(c);
           },
         };
-      })
+      }),
     );
   }
 

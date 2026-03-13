@@ -39,3 +39,9 @@
 1. Clone the repository.
 
 2. Open `index.html` to run the project.
+
+## Quick Look 🎥
+
+<p align="center">
+  <img src="./resources/evoltama-quick-look.gif" alt="Evoltama Quick Look"/>
+</p>

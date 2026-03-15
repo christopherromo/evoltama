@@ -183,9 +183,9 @@ class OverworldMap {
 window.OverworldMaps = {
   ForestVillage: {
     id: "ForestVillage",
-    lowerSrc: "./images/maps/ForestLower.png",
-    upperSrc: "./images/maps/ForestUpper.png",
-    battleBackgroundSrc: "./images/maps/ForestBattleMap.png",
+    lowerSrc: "./images/maps/forest-lower.png",
+    upperSrc: "./images/maps/forest-upper.png",
+    battleBackgroundSrc: "./images/maps/forest-battle.png",
     gameObjects: {},
     configObjects: {
       hero: {
@@ -194,11 +194,11 @@ window.OverworldMaps = {
         x: utils.withGrid(23),
         y: utils.withGrid(30),
       },
-      elder_beetle: {
+      elderBeetle: {
         type: "Person",
         x: utils.withGrid(40),
         y: utils.withGrid(26),
-        src: "./images/characters/people/Elder_Beetle.png",
+        src: "./images/characters/people/elder-beetle.png",
         talking: [
           {
             required: ["GAME_COMPLETE"],
@@ -206,7 +206,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Marvelous! You have saved the world!",
-                faceHero: "elder_beetle",
+                faceHero: "elderBeetle",
               },
             ],
           },
@@ -216,7 +216,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "I think you are ready, head to observatory north of the village!",
-                faceHero: "elder_beetle",
+                faceHero: "elderBeetle",
               },
             ],
           },
@@ -226,7 +226,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Be careful, the canyon is very dangerous!",
-                faceHero: "elder_beetle",
+                faceHero: "elderBeetle",
               },
             ],
           },
@@ -236,7 +236,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Head to the land of mushrooms!",
-                faceHero: "elder_beetle",
+                faceHero: "elderBeetle",
               },
             ],
           },
@@ -246,49 +246,42 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "You found the Evolisk Stone!",
-                faceHero: "elder_beetle",
+                faceHero: "elderBeetle",
               },
               {
                 type: "textMessage",
                 text: "Before I send you out into the world, I must make sure you are ready.",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "Let's battle!",
-                faceHero: "elder_beetle",
               },
-              { type: "battle", enemyId: "Elder_Beetle" },
+              { type: "battle", enemyId: "elderBeetle" },
               { type: "addStoryFlag", flag: "FOREST_COMPLETE" },
               {
                 type: "textMessage",
                 text: "You did great!",
-                faceHero: "elder_beetle",
+                faceHero: "elderBeetle",
               },
               {
                 type: "textMessage",
                 text: "You must build strong bonds with your Evolisks.",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "Your party can be rearranged in the Pause Menu.",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "I have given you some capture discs and potions to help you in your journey, use them wisely!",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "To the south of the village is the land of the mushrooms.",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "Head there first to build your strength!",
-                faceHero: "elder_beetle",
               },
             ],
           },
@@ -297,57 +290,49 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Hello Kairo! It's great to see you!",
-                faceHero: "elder_beetle",
+                faceHero: "elderBeetle",
               },
               {
                 type: "textMessage",
                 text: "I would like to tell you that all is well, but I'm afraid something is very wrong...",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "One of our townspeople has been corrupted and gone mad. She has locked herself in the old observatory.",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "I fear that unless someone is able to stop her, she is going to destroy us and all the Evolisks!",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "All of our townspeople are afraid, except for you, Kairo. You must help us!",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "But you will not be enough on your own. You're going to need a partner!",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
-                text: "There is a magical stone in my house to the right, I will allow you to have one of my Evolisks.",
-                faceHero: "elder_beetle",
+                text: "There is a magical stone in my house, I will allow you to have one of my Evolisks.",
               },
               {
                 type: "textMessage",
                 text: "You must train them well if you're going to save us! I will help guide you.",
-                faceHero: "elder_beetle",
               },
               {
                 type: "textMessage",
                 text: "Once you've chosen your new partner, return here to me.",
-                faceHero: "elder_beetle",
               },
             ],
           },
         ],
       },
-      beetle_guard_1: {
+      beetleGuard1: {
         type: "Person",
         x: utils.withGrid(53),
         y: utils.withGrid(55),
-        src: "./images/characters/people/Beetle_Guard.png",
+        src: "./images/characters/people/beetle-guard.png",
         talking: [
           {
             required: ["MUSHROOM_COMPLETE"],
@@ -355,15 +340,15 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Right this way, Kairo!",
-                faceHero: "beetle_guard_1",
+                faceHero: "beetleGuard1",
               },
               {
                 type: "removeWall",
                 x: 52,
                 y: 55,
               },
-              { who: "beetle_guard_1", type: "walk", direction: "left" },
-              { who: "beetle_guard_1", type: "walk", direction: "down" },
+              { who: "beetleGuard1", type: "walk", direction: "left" },
+              { who: "beetleGuard1", type: "walk", direction: "down" },
             ],
           },
           {
@@ -372,15 +357,15 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Good luck out there, Kairo!",
-                faceHero: "beetle_guard_1",
+                faceHero: "beetleGuard1",
               },
               {
                 type: "removeWall",
                 x: 52,
                 y: 55,
               },
-              { who: "beetle_guard_1", type: "walk", direction: "left" },
-              { who: "beetle_guard_1", type: "walk", direction: "down" },
+              { who: "beetleGuard1", type: "walk", direction: "left" },
+              { who: "beetleGuard1", type: "walk", direction: "down" },
             ],
           },
           {
@@ -388,17 +373,17 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Sorry, I can't let you through without the Elder Beetle's permission!",
-                faceHero: "beetle_guard_1",
+                faceHero: "beetleGuard1",
               },
             ],
           },
         ],
       },
-      beetle_guard_2: {
+      beetleGuard2: {
         type: "Person",
         x: utils.withGrid(69),
         y: utils.withGrid(42),
-        src: "./images/characters/people/Beetle_Guard.png",
+        src: "./images/characters/people/beetle-guard.png",
         talking: [
           {
             required: ["CANYON_COMPLETE"],
@@ -406,16 +391,16 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Right this way, Kairo!",
-                faceHero: "beetle_guard_2",
+                faceHero: "beetleGuard2",
               },
               {
                 type: "removeWall",
                 x: 69,
                 y: 41,
               },
-              { who: "beetle_guard_2", type: "walk", direction: "up" },
-              { who: "beetle_guard_2", type: "walk", direction: "right" },
-              { who: "beetle_guard_2", type: "stand", direction: "down" },
+              { who: "beetleGuard2", type: "walk", direction: "up" },
+              { who: "beetleGuard2", type: "walk", direction: "right" },
+              { who: "beetleGuard2", type: "stand", direction: "down" },
             ],
           },
           {
@@ -424,16 +409,16 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Squishy sent you? Right this way, Kairo!",
-                faceHero: "beetle_guard_2",
+                faceHero: "beetleGuard2",
               },
               {
                 type: "removeWall",
                 x: 69,
                 y: 41,
               },
-              { who: "beetle_guard_2", type: "walk", direction: "up" },
-              { who: "beetle_guard_2", type: "walk", direction: "right" },
-              { who: "beetle_guard_2", type: "stand", direction: "down" },
+              { who: "beetleGuard2", type: "walk", direction: "up" },
+              { who: "beetleGuard2", type: "walk", direction: "right" },
+              { who: "beetleGuard2", type: "stand", direction: "down" },
             ],
           },
           {
@@ -441,17 +426,17 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Sorry, the canyon is a very dangerous place!",
-                faceHero: "beetle_guard_2",
+                faceHero: "beetleGuard2",
               },
             ],
           },
         ],
       },
-      beetle_guard_3: {
+      beetleGuard3: {
         type: "Person",
         x: utils.withGrid(47),
         y: utils.withGrid(10),
-        src: "./images/characters/people/Beetle_Guard.png",
+        src: "./images/characters/people/beetle-guard.png",
         talking: [
           {
             required: ["GAME_COMPLETE"],
@@ -459,15 +444,15 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Right this way, Kairo!",
-                faceHero: "beetle_guard_3",
+                faceHero: "beetleGuard3",
               },
               {
                 type: "removeWall",
                 x: 46,
                 y: 10,
               },
-              { who: "beetle_guard_3", type: "walk", direction: "left" },
-              { who: "beetle_guard_3", type: "walk", direction: "down" },
+              { who: "beetleGuard3", type: "walk", direction: "left" },
+              { who: "beetleGuard3", type: "walk", direction: "down" },
             ],
           },
           {
@@ -476,20 +461,20 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "You defeated Hoppins? You must be ready!",
-                faceHero: "beetle_guard_3",
+                faceHero: "beetleGuard3",
               },
               {
                 type: "textMessage",
                 text: "Head to the observatory and save us!",
-                faceHero: "beetle_guard_3",
+                faceHero: "beetleGuard3",
               },
               {
                 type: "removeWall",
                 x: 46,
                 y: 10,
               },
-              { who: "beetle_guard_3", type: "walk", direction: "left" },
-              { who: "beetle_guard_3", type: "walk", direction: "down" },
+              { who: "beetleGuard3", type: "walk", direction: "left" },
+              { who: "beetleGuard3", type: "walk", direction: "down" },
             ],
           },
           {
@@ -497,7 +482,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "I can't let you go to the observatory yet, you'll get destroyed!",
-                faceHero: "beetle_guard_3",
+                faceHero: "beetleGuard3",
               },
             ],
           },
@@ -1279,8 +1264,8 @@ window.OverworldMaps = {
 
   House1: {
     id: "House1",
-    lowerSrc: "./images/maps/House1Lower.png",
-    upperSrc: "./images/maps/House1Upper.png",
+    lowerSrc: "./images/maps/house-1-lower.png",
+    upperSrc: "./images/maps/house-1-upper.png",
     gameObjects: {},
     configObjects: {
       hero: {
@@ -1380,8 +1365,8 @@ window.OverworldMaps = {
 
   House2: {
     id: "House2",
-    lowerSrc: "./images/maps/House2Lower.png",
-    upperSrc: "./images/maps/House2Upper.png",
+    lowerSrc: "./images/maps/house-2-lower.png",
+    upperSrc: "./images/maps/house-2-upper.png",
     gameObjects: {},
     configObjects: {
       hero: {
@@ -1485,8 +1470,8 @@ window.OverworldMaps = {
 
   House3: {
     id: "House3",
-    lowerSrc: "./images/maps/House3Lower.png",
-    upperSrc: "./images/maps/House3Upper.png",
+    lowerSrc: "./images/maps/house-3-lower.png",
+    upperSrc: "./images/maps/house-3-upper.png",
     gameObjects: {},
     configObjects: {
       hero: {
@@ -1495,11 +1480,11 @@ window.OverworldMaps = {
         x: utils.withGrid(5),
         y: utils.withGrid(10),
       },
-      mr_beetle: {
+      pawpaw: {
         type: "Person",
         x: utils.withGrid(7),
         y: utils.withGrid(4),
-        src: "./images/characters/people/Mr_Beetle.png",
+        src: "./images/characters/people/mr-beetle-pawpaw.png",
         behaviorLoop: [{ type: "stand", direction: "left", time: 1000 }],
         talking: [
           {
@@ -1507,8 +1492,12 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "You did it! You saved us!",
-                faceHero: "mr_beetle",
+                text: "You did it, you saved us!",
+                faceHero: "pawpaw",
+              },
+              {
+                type: "textMessage",
+                text: "Now I can see Coriander again!",
               },
             ],
           },
@@ -1517,7 +1506,11 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "I am so scared, I am not leaving my house anymore!",
-                faceHero: "mr_beetle",
+                faceHero: "pawpaw",
+              },
+              {
+                type: "textMessage",
+                text: "How will I see Coriander again?!",
               },
             ],
           },
@@ -1613,8 +1606,8 @@ window.OverworldMaps = {
   },
   House4: {
     id: "House4",
-    lowerSrc: "./images/maps/House4Lower.png",
-    upperSrc: "./images/maps/House4Upper.png",
+    lowerSrc: "./images/maps/house-4-lower.png",
+    upperSrc: "./images/maps/house-4-upper.png",
     gameObjects: {},
     configObjects: {
       hero: {
@@ -1624,11 +1617,11 @@ window.OverworldMaps = {
         y: utils.withGrid(10),
       },
 
-      mr_beetle_2: {
+      coriander: {
         type: "Person",
         x: utils.withGrid(3),
         y: utils.withGrid(8),
-        src: "./images/characters/people/Mr_Beetle_2.png",
+        src: "./images/characters/people/mr-beetle-coriander.png",
         behaviorLoop: [{ type: "stand", direction: "down", time: 1000 }],
         talking: [
           {
@@ -1636,8 +1629,12 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "I can go outside again! Thank you!",
-                faceHero: "mr_beetle_2",
+                text: "I can go outside again, thank you!",
+                faceHero: "coriander",
+              },
+              {
+                type: "textMessage",
+                text: "I'm going to go see Pawpaw now!",
               },
             ],
           },
@@ -1645,8 +1642,8 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "Are you sure you want to go outside?",
-                faceHero: "mr_beetle_2",
+                text: "I wonder if Pawpaw is okay... I hope he is safe in his house.",
+                faceHero: "coriander",
               },
             ],
           },
@@ -1743,9 +1740,9 @@ window.OverworldMaps = {
 
   MushroomWild: {
     id: "MushroomWild",
-    lowerSrc: "./images/maps/MushroomLower.png",
-    upperSrc: "./images/maps/MushroomUpper.png",
-    battleBackgroundSrc: "./images/maps/MushroomBattleMap.png",
+    lowerSrc: "./images/maps/mushroom-lower.png",
+    upperSrc: "./images/maps/mushroom-upper.png",
+    battleBackgroundSrc: "./images/maps/mushroom-battle.png",
     gameObjects: {},
 
     // configure objects in map
@@ -1757,36 +1754,54 @@ window.OverworldMaps = {
         x: utils.withGrid(18),
         y: utils.withGrid(1),
       },
-      npcA: {
+      cherry: {
         type: "Person",
         x: utils.withGrid(19),
         y: utils.withGrid(3),
-        src: "./images/characters/people/Squelchy_NPC.png",
+        src: "./images/characters/people/squelchy-cherry.png",
         talking: [
           {
             events: [
               {
                 type: "textMessage",
-                text: "Welcome to the Mushroom Kingdom! There are lots of wild Evolisks here, so be careful!",
-                faceHero: "npcA",
+                text: "Welcome to the land of mushrooms! My name is Cherry, I'm one of the Squelchy siblings.",
+                faceHero: "cherry",
+              },
+              {
+                type: "textMessage",
+                text: "Be careful around here, there are lots of wild Evolisks!",
+              },
+              {
+                type: "textMessage",
+                text: "Should you fail in battle, you'll start over there in the nursery.",
               },
             ],
           },
         ],
       },
-      npcB: {
+      shelly: {
         type: "Person",
         x: utils.withGrid(12),
         y: utils.withGrid(11),
-        src: "./images/characters/people/Squelchy_NPC_2.png",
+        src: "./images/characters/people/squelchy-shelly.png",
         talking: [
+          {
+            required: ["CANYON_COMPLETE"],
+            events: [
+              {
+                type: "textMessage",
+                text: "Wow, you showed those frogs who's boss!",
+                faceHero: "shelly",
+              },
+            ],
+          },
           {
             required: ["MUSHROOM_COMPLETE"],
             events: [
               {
                 type: "textMessage",
-                text: "Be careful at Froggert's hideout, those frogs can be vicious!",
-                faceHero: "npcB",
+                text: "Be careful at Froggerts' hideout, those frogs can be vicious!",
+                faceHero: "shelly",
               },
             ],
           },
@@ -1794,31 +1809,34 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "Our leader is the pink Squelchy, her name is Squishy!",
-                faceHero: "npcB",
+                text: "I'm Shelly, one of the Squelchy siblings. We are the protectors of mushrooms.",
+                faceHero: "shelly",
               },
               {
                 type: "textMessage",
-                text: "If you beat her in battle, she'll tell you where Froggert's hideout is!",
-                faceHero: "npcB",
+                text: "Our leader is the pink Squelchy, her name is Squishy!",
+              },
+              {
+                type: "textMessage",
+                text: "If you beat her in battle, she'll tell you where Froggerts' hideout is!",
               },
             ],
           },
         ],
       },
-      npcC: {
+      squishy: {
         type: "Person",
         x: utils.withGrid(4),
         y: utils.withGrid(8),
-        src: "./images/characters/people/Squelchy_NPC_3.png",
+        src: "./images/characters/people/squelchy-squishy.png",
         talking: [
           {
-            required: ["GAME_COMPLETE"],
+            required: ["CANYON_COMPLETE"],
             events: [
               {
                 type: "textMessage",
                 text: "I knew you could do it!",
-                faceHero: "npcC",
+                faceHero: "squishy",
               },
             ],
           },
@@ -1827,8 +1845,8 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "Good luck on your journey!",
-                faceHero: "npcC",
+                text: "Don't let those frogs bully you!",
+                faceHero: "squishy",
               },
             ],
           },
@@ -1837,29 +1855,26 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Hey man! Feel like testing your strength?",
-                faceHero: "npcC",
+                faceHero: "squishy",
               },
               { type: "battle", enemyId: "Squishy" },
               { type: "addStoryFlag", flag: "MUSHROOM_COMPLETE" },
               {
                 type: "textMessage",
                 text: "Not bad!",
-                faceHero: "npcC",
+                faceHero: "squishy",
               },
               {
                 type: "textMessage",
                 text: "You can find Froggert's hideout east of the village.",
-                faceHero: "npcC",
               },
               {
                 type: "textMessage",
                 text: "Tell the guard I sent you, he'll let you in.",
-                faceHero: "npcC",
               },
               {
                 type: "textMessage",
-                text: "Good luck!",
-                faceHero: "npcC",
+                text: "Don't let those frogs bully you!",
               },
             ],
           },
@@ -2084,16 +2099,16 @@ window.OverworldMaps = {
     healingSpot: {
       x: 23, // healing area x-coordinate
       y: 11, // healing area y-coordinate
-      message: "You've been teleported to a healing area in the Mushroom Wild!",
+      message: "You've been teleported to the mushroom nursery!",
       heal: "full", // healing type ("full" or "partial")
     },
   },
 
   CanyonWild: {
     id: "CanyonWild",
-    lowerSrc: "./images/maps/CanyonLower.png",
-    upperSrc: "./images/maps/CanyonUpper.png",
-    battleBackgroundSrc: "./images/maps/CanyonBattleMap.png",
+    lowerSrc: "./images/maps/canyon-lower.png",
+    upperSrc: "./images/maps/canyon-upper.png",
+    battleBackgroundSrc: "./images/maps/canyon-battle.png",
     gameObjects: {},
     configObjects: {
       // create hero & npcs & events
@@ -2103,11 +2118,11 @@ window.OverworldMaps = {
         x: utils.withGrid(1),
         y: utils.withGrid(9),
       },
-      npcA: {
+      squeak: {
         type: "Person",
         x: utils.withGrid(7),
         y: utils.withGrid(6),
-        src: "./images/characters/people/Froggert_Enemy.png",
+        src: "./images/characters/people/froggert-squeak.png",
         talking: [
           {
             required: ["CANYON_COMPLETE"],
@@ -2115,7 +2130,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "You defeated Hoppins?! I think we found our new leader!",
-                faceHero: "npcA",
+                faceHero: "squeak",
               },
             ],
           },
@@ -2124,22 +2139,21 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Welcome to the canyon, this is our hideout!",
-                faceHero: "npcA",
+                faceHero: "squeak",
               },
               {
                 type: "textMessage",
                 text: "Our leader is an orange frog named Hoppins, defeat him and you can take his place!",
-                faceHero: "npcA",
               },
             ],
           },
         ],
       },
-      npcB: {
+      pip: {
         type: "Person",
         x: utils.withGrid(12),
         y: utils.withGrid(4),
-        src: "./images/characters/people/Froggert_Enemy_2.png",
+        src: "./images/characters/people/froggert-pip.png",
         talking: [
           {
             required: ["GAME_COMPLETE"],
@@ -2147,7 +2161,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Wow, you really did it!",
-                faceHero: "npcB",
+                faceHero: "pip",
               },
             ],
           },
@@ -2156,17 +2170,17 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Hey, did you hear that some weirdo took over the old Observatory?",
-                faceHero: "npcB",
+                faceHero: "pip",
               },
             ],
           },
         ],
       },
-      npcC: {
+      hoppins: {
         type: "Person",
         x: utils.withGrid(20),
         y: utils.withGrid(18),
-        src: "./images/characters/people/Froggert_Enemy_3.png",
+        src: "./images/characters/people/froggert-hoppins.png",
         talking: [
           {
             required: ["GAME_COMPLETE"],
@@ -2174,7 +2188,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "You did it! You saved us all!",
-                faceHero: "npcC",
+                faceHero: "hoppins",
               },
             ],
           },
@@ -2184,7 +2198,7 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "What are you still doing here? Save us all!",
-                faceHero: "npcC",
+                faceHero: "hoppins",
               },
             ],
           },
@@ -2193,24 +2207,22 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "Hey! You shouldn't be here!",
-                faceHero: "npcC",
+                faceHero: "hoppins",
               },
               { type: "battle", enemyId: "Hoppins" },
               { type: "addStoryFlag", flag: "CANYON_COMPLETE" },
               {
                 type: "textMessage",
                 text: "Can't believe I lost...",
-                faceHero: "npcC",
+                faceHero: "hoppins",
               },
               {
                 type: "textMessage",
                 text: "Maybe you could do something about that person up at the observatory!",
-                faceHero: "npcC",
               },
               {
                 type: "textMessage",
                 text: "Tell the guard you defeated me, he'll know your tough stuff!",
-                faceHero: "npcC",
               },
             ],
           },
@@ -2472,8 +2484,8 @@ window.OverworldMaps = {
 
   ObservatoryExterior: {
     id: "ObservatoryExterior",
-    lowerSrc: "./images/maps/ObservatoryExteriorLower.png",
-    upperSrc: "./images/maps/ObservatoryExteriorUpper.png",
+    lowerSrc: "./images/maps/observatory-exterior-lower.png",
+    upperSrc: "./images/maps/observatory-exterior-upper.png",
     gameObjects: {},
     configObjects: {
       hero: {
@@ -2715,9 +2727,9 @@ window.OverworldMaps = {
 
   ObservatoryInterior: {
     id: "ObservatoryInterior",
-    lowerSrc: "./images/maps/ObservatoryLower.png",
-    upperSrc: "./images/maps/ObservatoryUpper.png",
-    battleBackgroundSrc: "./images/maps/ObservatoryBattleMap.png",
+    lowerSrc: "./images/maps/observatory-lower.png",
+    upperSrc: "./images/maps/observatory-upper.png",
+    battleBackgroundSrc: "./images/maps/observatory-battle.png",
     gameObjects: {},
     configObjects: {
       hero: {
@@ -2730,7 +2742,7 @@ window.OverworldMaps = {
         type: "Person",
         x: utils.withGrid(32),
         y: utils.withGrid(23),
-        src: "./images/characters/people/Kiera_Final_Boss.png",
+        src: "./images/characters/people/kiera.png",
         behaviorLoop: [{ type: "stand", direction: "up", time: 100 }],
         talking: [
           {
@@ -2747,8 +2759,12 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "You dare to challenge me?",
+                text: "My name is Kiera, and I plan to take over the world!",
                 faceHero: "kiera",
+              },
+              {
+                type: "textMessage",
+                text: "You dare to challenge me?",
               },
               { type: "battle", enemyId: "Kiera" },
               { type: "addStoryFlag", flag: "GAME_COMPLETE" },
@@ -2760,12 +2776,10 @@ window.OverworldMaps = {
               {
                 type: "textMessage",
                 text: "We can be friends? I would love to be friends!",
-                faceHero: "kiera",
               },
               {
                 type: "textMessage",
                 text: "Thank you for playing our game! :) - Kristen and Christopher",
-                faceHero: "kiera",
               },
             ],
           },
@@ -3005,250 +3019,6 @@ window.OverworldMaps = {
       y: 54, // healing area y-coordinate
       message: "You feel the need to try again for the sake of the world!",
       heal: "full", // healing type ("full" or "partial")
-    },
-  },
-
-  DemoRoom: {
-    id: "DemoRoom",
-    lowerSrc: "./images/maps/DemoLower.png",
-    upperSrc: "./images/maps/DemoUpper.png",
-    gameObjects: {},
-    configObjects: {
-      hero: {
-        type: "Person",
-        isPlayerControlled: true,
-        x: utils.withGrid(5),
-        y: utils.withGrid(6),
-      },
-      npcA: {
-        type: "Person",
-        x: utils.withGrid(7),
-        y: utils.withGrid(9),
-        src: "./images/characters/people/Squelchy_NPC.png",
-        behaviorLoop: [
-          { type: "stand", direction: "left", time: 800 },
-          { type: "stand", direction: "up", time: 800 },
-          { type: "stand", direction: "right", time: 1200 },
-          { type: "stand", direction: "up", time: 300 },
-        ],
-        talking: [
-          {
-            events: [
-              { type: "textMessage", text: "Hello!", faceHero: "npcA" },
-              { type: "textMessage", text: "Hello again!" },
-              { who: "hero", type: "walk", direction: "up" },
-            ],
-          },
-        ],
-      },
-      npcB: {
-        type: "Person",
-        x: utils.withGrid(8),
-        y: utils.withGrid(5),
-        src: "./images/characters/people/Froggert_Enemy.png",
-      },
-    },
-    walls: {
-      [utils.asGridCoord(7, 6)]: true,
-      [utils.asGridCoord(8, 6)]: true,
-      [utils.asGridCoord(7, 7)]: true,
-      [utils.asGridCoord(8, 7)]: true,
-    },
-    cutsceneSpaces: {
-      [utils.asGridCoord(7, 4)]: [
-        {
-          events: [
-            { who: "npcB", type: "walk", direction: "left" },
-            { who: "npcB", type: "stand", direction: "up", time: 500 },
-            { type: "textMessage", text: "You can't be in there!" },
-            { who: "npcB", type: "walk", direction: "right" },
-            { who: "hero", type: "walk", direction: "down" },
-            { who: "hero", type: "walk", direction: "left" },
-          ],
-        },
-      ],
-      [utils.asGridCoord(5, 10)]: [
-        {
-          events: [
-            {
-              type: "changeMap",
-              map: "AlchemyRoom",
-              x: utils.withGrid(2),
-              y: utils.withGrid(2),
-              direction: "down",
-            },
-          ],
-        },
-      ],
-    },
-
-    wildEncounterAreas: [
-      {
-        xMin: utils.withGrid(0),
-        xMax: utils.withGrid(10),
-        yMin: utils.withGrid(0),
-        yMax: utils.withGrid(10),
-      },
-    ],
-  },
-
-  AlchemyRoom: {
-    id: "AlchemyRoom",
-    lowerSrc: "./images/maps/AlchemyLower.png",
-    upperSrc: "./images/maps/AlchemyUpper.png",
-    gameObjects: {},
-    configObjects: {
-      hero: {
-        type: "Person",
-        isPlayerControlled: true,
-        x: utils.withGrid(5),
-        y: utils.withGrid(5),
-      },
-      npcA: {
-        type: "Person",
-        x: utils.withGrid(3),
-        y: utils.withGrid(5),
-        src: "./images/characters/people/Squelchy_NPC.png",
-        talking: [
-          {
-            events: [
-              {
-                type: "textMessage",
-                text: "You should touch that weird stone over there!",
-                faceHero: "npcA",
-              },
-              { type: "addStoryFlag", flag: "TALKED_TO_NPC1" },
-            ],
-          },
-        ],
-      },
-      npcB: {
-        type: "Person",
-        x: utils.withGrid(10),
-        y: utils.withGrid(8),
-        src: "./images/characters/people/Froggert_Enemy.png",
-        talking: [
-          {
-            required: ["TALKED_TO_NPC1"],
-            events: [
-              {
-                type: "textMessage",
-                text: "Squelchy looks kinda funny...",
-                faceHero: "npcB",
-              },
-            ],
-          },
-          {
-            events: [
-              {
-                type: "textMessage",
-                text: "I'm bored, battle me!",
-                faceHero: "npcB",
-              },
-              { type: "battle", enemyId: "Froggert" },
-              { type: "addStoryFlag", flag: "DEFEATED_FROGGERT" },
-              {
-                type: "textMessage",
-                text: "You defeated me!",
-                faceHero: "npcB",
-              },
-            ],
-          },
-        ],
-      },
-      evoliskStone: {
-        type: "EvoliskStone",
-        x: utils.withGrid(4),
-        y: utils.withGrid(8),
-        storyFlag: "USED_EVOLISK_STONE",
-        evolisks: ["ep002", "ep003"],
-      },
-    },
-
-    walls: {
-      // objects
-
-      // tables
-      [utils.asGridCoord(2, 4)]: true,
-      [utils.asGridCoord(3, 4)]: true,
-
-      [utils.asGridCoord(6, 4)]: true,
-      [utils.asGridCoord(7, 4)]: true,
-
-      [utils.asGridCoord(10, 4)]: true,
-      [utils.asGridCoord(11, 4)]: true,
-
-      // counter
-      [utils.asGridCoord(1, 5)]: true,
-      [utils.asGridCoord(1, 6)]: true,
-      [utils.asGridCoord(1, 7)]: true,
-
-      [utils.asGridCoord(6, 7)]: true,
-      [utils.asGridCoord(7, 7)]: true,
-
-      [utils.asGridCoord(9, 7)]: true,
-      [utils.asGridCoord(10, 7)]: true,
-
-      [utils.asGridCoord(9, 9)]: true,
-      [utils.asGridCoord(10, 9)]: true,
-
-      // crates
-      [utils.asGridCoord(1, 9)]: true,
-      [utils.asGridCoord(2, 9)]: true,
-
-      // walls
-
-      // upper wall
-      [utils.asGridCoord(1, 3)]: true,
-      [utils.asGridCoord(2, 3)]: true,
-      [utils.asGridCoord(3, 3)]: true,
-      [utils.asGridCoord(4, 3)]: true,
-      [utils.asGridCoord(5, 3)]: true,
-      [utils.asGridCoord(6, 3)]: true,
-      [utils.asGridCoord(7, 3)]: true,
-      [utils.asGridCoord(8, 3)]: true,
-      [utils.asGridCoord(9, 3)]: true,
-      [utils.asGridCoord(10, 3)]: true,
-      [utils.asGridCoord(11, 3)]: true,
-      [utils.asGridCoord(12, 3)]: true,
-
-      // left wall
-      [utils.asGridCoord(0, 0)]: true,
-      [utils.asGridCoord(0, 1)]: true,
-      [utils.asGridCoord(0, 2)]: true,
-      [utils.asGridCoord(0, 3)]: true,
-      [utils.asGridCoord(0, 4)]: true,
-      [utils.asGridCoord(0, 5)]: true,
-      [utils.asGridCoord(0, 6)]: true,
-      [utils.asGridCoord(0, 7)]: true,
-      [utils.asGridCoord(0, 8)]: true,
-      [utils.asGridCoord(0, 9)]: true,
-
-      // right wall
-      [utils.asGridCoord(13, 0)]: true,
-      [utils.asGridCoord(13, 1)]: true,
-      [utils.asGridCoord(13, 2)]: true,
-      [utils.asGridCoord(13, 3)]: true,
-      [utils.asGridCoord(13, 4)]: true,
-      [utils.asGridCoord(13, 5)]: true,
-      [utils.asGridCoord(13, 6)]: true,
-      [utils.asGridCoord(13, 7)]: true,
-      [utils.asGridCoord(13, 8)]: true,
-      [utils.asGridCoord(13, 9)]: true,
-
-      // bottom
-      [utils.asGridCoord(1, 10)]: true,
-      [utils.asGridCoord(2, 10)]: true,
-      [utils.asGridCoord(3, 10)]: true,
-      [utils.asGridCoord(4, 10)]: true,
-      [utils.asGridCoord(5, 11)]: true,
-      [utils.asGridCoord(6, 10)]: true,
-      [utils.asGridCoord(7, 10)]: true,
-      [utils.asGridCoord(8, 10)]: true,
-      [utils.asGridCoord(9, 10)]: true,
-      [utils.asGridCoord(10, 10)]: true,
-      [utils.asGridCoord(11, 10)]: true,
-      [utils.asGridCoord(12, 10)]: true,
     },
   },
 };

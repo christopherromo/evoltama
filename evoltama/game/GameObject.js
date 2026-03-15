@@ -14,7 +14,7 @@ class GameObject {
     // sprite setup
     this.sprite = new Sprite({
       gameObject: this,
-      src: config.src || "./images/characters/people/Kairo_Hero.png",
+      src: config.src || "./images/characters/people/kairo.png",
     });
 
     this.behaviorLoop = config.behaviorLoop || [];

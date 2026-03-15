@@ -235,7 +235,7 @@ window.BattleAnimations = {
     const container = document.querySelector(".Battle");
 
     const disc = document.createElement("img");
-    disc.src = "./images/tempDisc.png"; // your placeholder disc
+    disc.src = "./images/ui/temp-disc.png"; // your placeholder disc
     disc.classList.add("capture-disc");
     disc.style.position = "absolute";
     disc.style.width = "24px";

@@ -17,7 +17,7 @@ class Battle {
     this.isWildEncounter = isWildEncounter;
 
     this.battleBackgroundSrc =
-      battleBackgroundSrc || "./images/maps/DemoBattle.png";
+      battleBackgroundSrc || "./images/maps/forest-battle.png";
 
     this.backgroundImage = new Image();
     this.backgroundImage.src = this.battleBackgroundSrc;
@@ -108,7 +108,7 @@ class Battle {
 
     this.element.innerHTML = `
       <div class="Battle_hero">
-        <img src="./images/characters/people/Kairo_Hero.png" alt="Hero" />
+        <img src="./images/characters/people/kairo.png" alt="Hero" />
       </div>
       ${enemyHTML}
     `;

@@ -23,7 +23,7 @@ class EvoliskStone extends GameObject {
         events: [
           {
             type: "textMessage",
-            text: "You have already used this! You can't have ANOTHER Evolisk for free! Not in this economy...",
+            text: "You already took a disk! You can't have ANOTHER Evolisk for free! Not in this economy...",
           },
         ],
       },

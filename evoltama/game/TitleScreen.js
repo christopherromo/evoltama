@@ -37,7 +37,7 @@ class TitleScreen {
     this.element.classList.add("TitleScreen");
 
     this.element.innerHTML = `
-            <img class="TitleScreen_logo" src="./images/EvoltamaLogo.png" alt="Evoltama" />
+            <img class="TitleScreen_logo" src="./images/ui/evoltama-logo.png" alt="Evoltama" />
             `;
   }
 

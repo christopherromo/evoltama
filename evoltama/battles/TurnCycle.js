@@ -108,7 +108,7 @@ class TurnCycle {
     if (winner) {
       await this.onNewEvent({
         type: "textMessage",
-        text: "Winner!",
+        text: "You won!",
       });
       this.onWinner(winner);
       return;

@@ -189,14 +189,14 @@ window.Actions = {
 
   // items
   item_recoverStatus: {
-    name: "Heating Lamp",
+    name: "Green Potion",
     description:
-      "Feeling fresh and warm the user is no longer affected by status effects.",
+      "The user may drink this potion to remove status effects.",
     targetType: "friendly",
     success: [
-      { type: "textMessage", text: "{CASTER} uses a {ACTION}!" },
+      { type: "textMessage", text: "{CASTER} drinks a {ACTION}!" },
       { type: "stateChange", status: null },
-      { type: "textMessage", text: "Feeling fresh!" },
+      { type: "textMessage", text: "{CASTER} has been cured of all status effects!" },
     ],
   },
   item_recoverHp: {
@@ -204,7 +204,7 @@ window.Actions = {
     description: "The user may drink this potion to recover 40 lost health.",
     targetType: "friendly",
     success: [
-      { type: "textMessage", text: "{CASTER} drinks some {ACTION}!" },
+      { type: "textMessage", text: "{CASTER} drinks a {ACTION}!" },
       { type: "stateChange", recover: 40 },
       { type: "textMessage", text: "{CASTER} recovers health!" },
     ],

@@ -12,8 +12,6 @@ class PlayerState {
       { actionId: "catchDisc", instanceId: "item3" },
       { actionId: "catchDisc", instanceId: "item4" },
       { actionId: "catchDisc", instanceId: "item5" },
-      { actionId: "catchDisc", instanceId: "item6" },
-      { actionId: "catchDisc", instanceId: "item7" },
     ];
     this.storyFlags = {};
   }

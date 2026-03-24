@@ -3,8 +3,9 @@
 */
 
 class EvoliskMenu {
-  constructor({ evolisks, onComplete }) {
+  constructor({ evolisks, rewardConfig = {}, onComplete }) {
     this.evolisks = evolisks;
+    this.rewardConfig = rewardConfig;
     this.onComplete = onComplete;
   }
 
@@ -16,7 +17,7 @@ class EvoliskMenu {
         label: base.name,
         description: base.description,
         handler: () => {
-          playerState.addEvolisk(id);
+          playerState.addEvolisk(id, this.rewardConfig[id] || {});
           this.close();
         },
       };

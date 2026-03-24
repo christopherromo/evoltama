@@ -16,15 +16,70 @@ class PlayerState {
     this.storyFlags = {};
   }
 
-  addEvolisk(evoliskId) {
+  normalizeItemActionId(actionId) {
+    const legacyActionIds = {
+      redPotion: "item_recoverHp",
+      greenPotion: "item_recoverStatus",
+    };
+
+    return legacyActionIds[actionId] || actionId;
+  }
+
+  normalizeItems() {
+    this.items = (this.items || []).map((item) => ({
+      ...item,
+      actionId: this.normalizeItemActionId(item.actionId),
+    }));
+  }
+
+  getOwnedEvoliskId(evoliskId) {
+    const tamedId = evoliskId.replace(/^ee/, "ep");
+
+    if (window.Evolisks?.[tamedId]) {
+      return tamedId;
+    }
+
+    return evoliskId;
+  }
+
+  getEvoliskDisplayName(id) {
+    const evolisk = this.evolisks[id];
+    if (!evolisk) {
+      return "";
+    }
+
+    const base = window.Evolisks?.[evolisk.evoliskId];
+    if (!base) {
+      return evolisk.name || "";
+    }
+
+    if (evolisk.name) {
+      return evolisk.name;
+    }
+
+    if (evolisk.isMutated && base.mutatedName) {
+      return base.mutatedName;
+    }
+
+    return base.name;
+  }
+
+  addEvolisk(evoliskId, config = {}) {
+    const ownedEvoliskId = this.getOwnedEvoliskId(evoliskId);
     const newId = `p${Date.now()}` + Math.floor(Math.random() * 99999);
+    const level = config.level || 1;
+    const baseMaxHp = config.baseMaxHp || 50;
+    const scaledMaxHp = Math.floor(baseMaxHp + (level - 1) * 5);
+    const maxHp = typeof config.maxHp === "number" ? config.maxHp : scaledMaxHp;
+    const hp = typeof config.hp === "number" ? config.hp : maxHp;
     this.evolisks[newId] = {
-      evoliskId,
-      hp: 50,
-      maxHp: 50,
-      xp: 0,
-      maxXp: 100,
-      level: 1,
+      evoliskId: ownedEvoliskId,
+      baseMaxHp,
+      hp,
+      maxHp,
+      xp: config.xp || 0,
+      maxXp: config.maxXp || 100,
+      level,
       status: null,
     };
 

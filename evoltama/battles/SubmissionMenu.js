@@ -13,19 +13,38 @@ class SubmissionMenu {
     let quantityMap = {};
     items.forEach((item) => {
       if (item.team === caster.team) {
-        let existing = quantityMap[item.actionId];
+        const actionId = window.playerState.normalizeItemActionId(
+          item.actionId,
+        );
+        const action = Actions[actionId];
+
+        if (!action) {
+          return;
+        }
+
+        let existing = quantityMap[actionId];
         if (existing) {
           existing.quantity += 1;
         } else {
-          quantityMap[item.actionId] = {
-            actionId: item.actionId,
+          quantityMap[actionId] = {
+            actionId,
             quantity: 1,
             instanceId: item.instanceId,
           };
         }
       }
     });
-    this.items = Object.values(quantityMap);
+    const itemOrder = {
+      item_recoverHp: 0,
+      item_recoverStatus: 1,
+      catchDisc: 2,
+    };
+
+    this.items = Object.values(quantityMap).sort((a, b) => {
+      const aOrder = itemOrder[a.actionId] ?? Number.MAX_SAFE_INTEGER;
+      const bOrder = itemOrder[b.actionId] ?? Number.MAX_SAFE_INTEGER;
+      return aOrder - bOrder;
+    });
   }
 
   getPages() {
@@ -60,25 +79,25 @@ class SubmissionMenu {
             this.keyboardMenu.setOptions(this.getPages().replacements);
           },
         },
+        {
+          label: "Escape",
+          description: "Leave the battle",
+          handler: () => {
+            this.menuSubmitRun();
+          },
+        },
       ],
       attacks: [
-        ...this.caster.actions
-          .filter((key) => {
-            if (key === "catchNet" && !this.battle.isWildEncounter) {
-              return false; // hide "catch net" if it's not a wild battle
-            }
-            return true;
-          })
-          .map((key) => {
-            const action = Actions[key];
-            return {
-              label: action.name,
-              description: action.description,
-              handler: () => {
-                this.menuSubmit(action);
-              },
-            };
-          }),
+        ...this.caster.actions.map((key) => {
+          const action = Actions[key];
+          return {
+            label: action.name,
+            description: action.description,
+            handler: () => {
+              this.menuSubmit(action);
+            },
+          };
+        }),
         backOption,
       ],
       items: [
@@ -132,6 +151,14 @@ class SubmissionMenu {
     });
   }
 
+  menuSubmitRun() {
+    this.keyboardMenu?.end();
+
+    this.onComplete({
+      ran: true,
+    });
+  }
+
   decide() {
     const actionKeys = this.caster.actions || [];
     const availableActions = actionKeys
@@ -142,7 +169,6 @@ class SubmissionMenu {
       availableActions[Math.floor(Math.random() * availableActions.length)];
 
     if (!randomAction) {
-      console.error("Enemy has no valid actions.");
       this.onComplete(null);
       return;
     }
@@ -165,7 +191,7 @@ class SubmissionMenu {
 
   init(container) {
     if (this.caster.isPlayerControlled) {
-      // show some UI
+      // show some ui
       this.showMenu(container);
     } else {
       this.decide();

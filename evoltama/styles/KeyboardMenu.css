@@ -13,7 +13,7 @@
   align-items: center;
   width: 100%;
   text-align: left;
-  -webkit-appearance: none;
+  appearance: none;
   border: 0;
   background: none;
   height: 20px;
@@ -49,26 +49,37 @@
   bottom: 0;
   left: 0;
   right: 0;
-  max-height: 40px; /* smaller height to stay above the menu */
+  max-height: 40px;
   overflow-y: auto;
   color: var(--menu-font-color);
   border-top: 1px solid var(--border-color);
   background: var(--menu-background);
   padding: 2px;
-  z-index: 5; /* ensure it's above other background layers */
+  z-index: 5;
 }
 
 .DescriptionBox p {
   font-size: 10px;
   margin: 0;
-  white-space: normal; /* allows wrapping */
-  word-wrap: break-word; /* wraps long words too */
+  white-space: normal;
+  word-wrap: break-word;
 }
 
 /* battle specific */
 .Battle .KeyboardMenu {
-  right: 0;
-  bottom: 40px; /* push the menu up so it's not sitting on top of DescriptionBox */
-  width: 140px;
+  right: 4px;
+  bottom: 36px;
+  width: 124px;
   z-index: 10;
+}
+
+.Battle .KeyboardMenu button {
+  height: 18px;
+  padding-left: 0.8em;
+  font-size: 9px;
+}
+
+.Battle .KeyboardMenu .option .right {
+  font-size: 9px;
+  padding-right: 2px;
 }

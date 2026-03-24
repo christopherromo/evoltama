@@ -87,6 +87,39 @@ class Battle {
     }
   }
 
+  syncPlayerState({ emitUpdate = true } = {}) {
+    const playerState = window.playerState;
+
+    Object.keys(playerState.evolisks).forEach((id) => {
+      const playerStateEvolisk = playerState.evolisks[id];
+      const combatant = this.combatants[id];
+
+      if (!combatant) {
+        return;
+      }
+
+      playerStateEvolisk.hp = combatant.hp;
+      playerStateEvolisk.baseMaxHp = combatant.baseMaxHp;
+      playerStateEvolisk.maxHp = combatant.maxHp;
+      playerStateEvolisk.xp = combatant.xp;
+      playerStateEvolisk.maxXp = combatant.maxXp;
+      playerStateEvolisk.level = combatant.level;
+      playerStateEvolisk.status = null;
+
+      if (combatant.isMutated) {
+        playerStateEvolisk.isMutated = true;
+        playerStateEvolisk.src = combatant.src;
+        if (combatant.name) {
+          playerStateEvolisk.name = combatant.name;
+        }
+      }
+    });
+
+    if (emitUpdate) {
+      utils.emitEvent("PlayerStateUpdated");
+    }
+  }
+
   // draw the battle element (hero and enemy)
   createElement() {
     this.element = document.createElement("div");
@@ -166,35 +199,25 @@ class Battle {
 
     this.turnCycle = new TurnCycle({
       battle: this,
-      map: this.map,
       onNewEvent: (event) => {
         return new Promise((resolve) => {
           const battleEvent = new BattleEvent(event, this);
           battleEvent.init(resolve);
         });
       },
-      onWinner: (winner) => {
-        if (winner === "player") {
+      onWinner: (outcome) => {
+        this.syncPlayerState({
+          emitUpdate: true,
+        });
+
+        if (outcome === "player") {
           const playerState = window.playerState;
-          Object.keys(playerState.evolisks).forEach((id) => {
-            const playerStateEvolisk = playerState.evolisks[id];
-            const combatant = this.combatants[id];
-            if (combatant) {
-              playerStateEvolisk.hp = combatant.hp;
-              playerStateEvolisk.xp = combatant.xp;
-              playerStateEvolisk.maxXp = combatant.maxXp;
-              playerStateEvolisk.level = combatant.level;
-            }
-          });
-
-          utils.emitEvent("PlayerStateUpdated");
-
           playerState.items = playerState.items.filter((item) => {
             return !this.usedInstanceIds[item.instanceId];
           });
         }
         this.element.remove();
-        this.onComplete(winner === "player");
+        this.onComplete(outcome);
       },
     });
 

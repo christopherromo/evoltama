@@ -44,6 +44,7 @@ class Progress {
       Object.keys(file.playerState).forEach((key) => {
         playerState[key] = file.playerState[key];
       });
+      playerState.normalizeItems();
     }
 
     window.playerState.isNewGame = false;

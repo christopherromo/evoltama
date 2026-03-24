@@ -161,7 +161,7 @@ class Person extends GameObject {
 
     if (isInWildEncounterArea) {
       // set encounter chance
-      const encounterChance = 0.1; // 5% chance
+      const encounterChance = this.map.wildEncounterChance ?? 0.1;
       if (Math.random() < encounterChance) {
         utils.emitEvent("WildEncounter");
       }

@@ -40,16 +40,18 @@ window.Evolisks = {
   },
   ee004: {
     name: "Ghobun",
+    mutatedName: "Gloomare",
     description:
       "A friendly Evolisk from the shadow realm with a mischievous nature.",
     type: EvoliskTypes.shadow,
     src: "./images/characters/evolisks/ghobun-enemy.png",
     mutatedSrc: "./images/characters/evolisks/gloomare-enemy.png",
     icon: "./images/icons/shadow-type.png",
-    actions: ["phantomCharge", "recoverPulse", "shroudStep"],
+    actions: ["phantomCharge", "mesmerizingGaze", "shroudStep"],
   },
   ee005: {
     name: "Juzafrigi",
+    mutatedName: "Frigest",
     description:
       "You're not entirely sure if this is an Evolisk or a fridge. It does seem to have sentient thoughts, somehow.",
     type: EvoliskTypes.naturalist,
@@ -69,6 +71,7 @@ window.Evolisks = {
   },
   ee007: {
     name: "Leaflin",
+    mutatedName: "Floramble",
     description:
       "While this may just look like a pile of leaves, it's actually an Evolisk! It uses foliage to protect itself.",
     type: EvoliskTypes.naturalist,
@@ -79,6 +82,7 @@ window.Evolisks = {
   },
   ee008: {
     name: "Nimbz",
+    mutatedName: "King Stratus",
     description:
       "This moody Evolisk is not to be messed with! It is known to shoot lightning at those it dislikes.",
     type: EvoliskTypes.mythic,
@@ -118,16 +122,18 @@ window.Evolisks = {
   },
   ep004: {
     name: "Ghobun",
+    mutatedName: "Gloomare",
     description:
       "A friendly Evolisk from the shadow realm with a mischievous nature.",
     type: EvoliskTypes.shadow,
     src: "./images/characters/evolisks/ghobun-tamed.png",
     mutatedSrc: "./images/characters/evolisks/gloomare-tamed.png",
     icon: "./images/icons/shadow-type.png",
-    actions: ["phantomCharge", "recoverPulse", "shroudStep"],
+    actions: ["phantomCharge", "mesmerizingGaze", "shroudStep"],
   },
   ep005: {
     name: "Juzafrigi",
+    mutatedName: "Frigest",
     description:
       "You're not entirely sure if this is an Evolisk or a fridge. It does seem to have sentient thoughts, somehow.",
     type: EvoliskTypes.naturalist,
@@ -147,6 +153,7 @@ window.Evolisks = {
   },
   ep007: {
     name: "Leaflin",
+    mutatedName: "Floramble",
     description:
       "While this may just look like a pile of leaves, it's actually an Evolisk! It uses foliage to protect itself.",
     type: EvoliskTypes.naturalist,
@@ -157,6 +164,7 @@ window.Evolisks = {
   },
   ep008: {
     name: "Nimbz",
+    mutatedName: "King Stratus",
     description:
       "This moody Evolisk is not to be messed with! It is known to shoot lightning at those it dislikes.",
     type: EvoliskTypes.mythic,

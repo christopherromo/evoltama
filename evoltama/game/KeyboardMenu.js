@@ -34,18 +34,34 @@ class KeyboardMenu {
         const chosenOption = this.options[Number(button.dataset.button)];
         chosenOption.handler();
       });
-      button.addEventListener("mouseenter", () => {
-        button.focus();
+      button.addEventListener("mousemove", () => {
+        if (this.prevFocus !== button) {
+          button.focus();
+        }
       });
       button.addEventListener("focus", () => {
         this.prevFocus = button;
-        this.descriptionElementText.innerText = button.dataset.description;
+        this.descriptionElementText.innerText =
+          button.dataset.description || "Choose an option.";
       });
     });
 
-    setTimeout(() => {
-      this.element.querySelector("button[data-button]:not([disabled])").focus();
-    }, 10);
+    const firstEnabledButton = this.element.querySelector(
+      "button[data-button]:not([disabled])",
+    );
+
+    if (firstEnabledButton) {
+      this.prevFocus = firstEnabledButton;
+      this.descriptionElementText.innerText =
+        firstEnabledButton.dataset.description || "Choose an option.";
+
+      requestAnimationFrame(() => {
+        firstEnabledButton.focus();
+      });
+    } else {
+      this.prevFocus = null;
+      this.descriptionElementText.innerText = "No options available.";
+    }
   }
 
   createElement() {
@@ -55,7 +71,7 @@ class KeyboardMenu {
     // description box element
     this.descriptionElement = document.createElement("div");
     this.descriptionElement.classList.add("DescriptionBox");
-    this.descriptionElement.innerHTML = `<p>I will provide information!</p>`;
+    this.descriptionElement.innerHTML = `<p>Choose an option.</p>`;
     this.descriptionElementText = this.descriptionElement.querySelector("p");
   }
 
@@ -77,6 +93,13 @@ class KeyboardMenu {
     container.appendChild(this.element);
 
     this.up = new KeyPressListener("ArrowUp", () => {
+      if (!this.prevFocus) {
+        this.element
+          .querySelector("button[data-button]:not([disabled])")
+          ?.focus();
+        return;
+      }
+
       const current = Number(this.prevFocus.getAttribute("data-button"));
       const prevButton = Array.from(
         this.element.querySelectorAll("button[data-button]"),
@@ -88,6 +111,13 @@ class KeyboardMenu {
       prevButton?.focus();
     });
     this.down = new KeyPressListener("ArrowDown", () => {
+      if (!this.prevFocus) {
+        this.element
+          .querySelector("button[data-button]:not([disabled])")
+          ?.focus();
+        return;
+      }
+
       const current = Number(this.prevFocus.getAttribute("data-button"));
       const nextButton = Array.from(
         this.element.querySelectorAll("button[data-button]"),

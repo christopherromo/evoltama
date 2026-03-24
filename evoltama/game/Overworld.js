@@ -5,9 +5,13 @@
 class Overworld {
   constructor(config) {
     this.element = config.element;
-    this.canvas = this.element.querySelector(".game-canvas");
+    this.canvas =
+      this.element.querySelector(".game-canvas") ||
+      this.element.querySelector("canvas");
     this.ctx = this.canvas.getContext("2d");
     this.map = null;
+    this.isGameLoopRunning = false;
+    this.animationFrameId = null;
   }
 
   gameLoopStepWork(delta) {
@@ -44,11 +48,18 @@ class Overworld {
 
   // starts the main game loop
   startGameLoop() {
+    if (this.isGameLoopRunning) {
+      return;
+    }
+
+    this.isGameLoopRunning = true;
     let previousMs;
     const step = 1 / 60;
 
     const stepFn = (timestampMs) => {
       if (this.map.isPaused) {
+        this.isGameLoopRunning = false;
+        this.animationFrameId = null;
         return;
       }
       if (previousMs === undefined) {
@@ -63,10 +74,10 @@ class Overworld {
       previousMs = timestampMs - delta * 1000;
 
       // business as usual tick
-      requestAnimationFrame(stepFn);
+      this.animationFrameId = requestAnimationFrame(stepFn);
     };
     // first kickoff tick
-    requestAnimationFrame(stepFn);
+    this.animationFrameId = requestAnimationFrame(stepFn);
   }
 
   // binds the action input
@@ -176,7 +187,7 @@ class Overworld {
         },
         {
           type: "textMessage",
-          text: "I think the Elder Beetle is looking for you, he should be in the main village!",
+          text: "I think the Elder Beetle is looking for you, he should be in the village!",
         },
         {
           type: "textMessage",
@@ -197,7 +208,7 @@ class Overworld {
       this.map.startCutscene([
         {
           type: "textMessage",
-          text: "Welcome Back! Good luck out there!",
+          text: "Welcome back, good luck out there!",
         },
       ]);
     }

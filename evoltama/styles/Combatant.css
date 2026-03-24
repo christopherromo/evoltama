@@ -5,31 +5,46 @@
 .Combatant {
   width: 67px;
   height: 14px;
-  background: url(../images/ui/combatant-plate.png) no-repeat no-repeat;
   position: absolute;
 }
 
-.Battle .Combatant {
-  transform: scale(2);
+.Combatant_plate {
+  position: absolute;
+  inset: 0;
+  width: 67px;
+  height: 14px;
+  background: url(../images/ui/combatant-plate.png) no-repeat no-repeat;
+}
+
+.Battle .Combatant--battle {
+  width: 67px;
+  height: 14px;
+  transform: translateZ(0);
   transition: opacity 0.4s;
 }
 
-.Battle .Combatant[data-active="false"] {
+.Battle .Combatant--battle[data-active="false"] {
   opacity: 0;
 }
 
-.Battle .Combatant[data-active="true"] {
+.Battle .Combatant--battle[data-active="true"] {
   opacity: 1;
 }
 
-.Combatant[data-team="player"] {
-  left: 46px;
-  top: 70px;
+.Combatant--battle[data-team="player"] {
+  left: 15px;
+  top: 61px;
 }
 
-.Combatant[data-team="enemy"] {
-  top: 28px;
-  right: 77px;
+.Combatant--battle[data-team="enemy"] {
+  top: 21px;
+  right: 110px;
+}
+
+.Battle .Combatant--battle .Combatant_plate {
+  transform: scale(2);
+  transform-origin: top left;
+  image-rendering: pixelated;
 }
 
 .Combatant_character_crop {
@@ -48,7 +63,7 @@
   bottom: -7px;
 }
 
-.Battle .Combatant_character_crop {
+.Battle .Combatant--battle .Combatant_character_crop {
   display: none;
 }
 
@@ -65,8 +80,26 @@
   margin: 0;
 }
 
+.Combatant--battle .Combatant_name {
+  left: 33%;
+  top: -12px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  line-height: 1;
+  padding-left: 2px;
+  padding-right: 2px;
+  -webkit-font-smoothing: antialiased;
+}
+
 .Combatant_type {
   position: absolute;
+  left: 3px;
+  top: -2px;
+  width: 16px;
+  height: 16px;
+}
+
+.Combatant--battle .Combatant_type {
   left: 3px;
   top: -2px;
   width: 16px;
@@ -81,12 +114,26 @@
   height: 3px;
 }
 
+.Combatant--battle .Combatant_life-container {
+  left: 20px;
+  top: 4px;
+  width: 26px;
+  height: 3px;
+}
+
 .Combatant_life-container > rect {
   transition: width 0.2s;
 }
 
 .Combatant_xp-container {
   position: absolute;
+  left: 20px;
+  top: 8px;
+  width: 26px;
+  height: 2px;
+}
+
+.Combatant--battle .Combatant_xp-container {
   left: 20px;
   top: 8px;
   width: 26px;
@@ -108,6 +155,13 @@
   margin: 0;
 }
 
+.Combatant--battle .Combatant_level {
+  right: 2px;
+  top: -1px;
+  width: 17px;
+  height: 12px;
+}
+
 .Combatant_status {
   position: absolute;
   font-size: 5px;
@@ -115,9 +169,19 @@
   bottom: -3px;
   padding-left: 2px;
   padding-right: 2px;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--menu-font-color);
   color: white;
   margin: 0;
+}
+
+.Combatant--battle .Combatant_status {
+  font-size: 4px;
+  left: 47px;
+  bottom: -3px;
+  padding-left: 1px;
+  padding-right: 1px;
+  line-height: 1;
+  -webkit-font-smoothing: antialiased;
 }
 
 .Combatant_status[data-status="saucy"] {

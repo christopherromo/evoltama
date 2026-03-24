@@ -235,7 +235,7 @@ window.BattleAnimations = {
     const container = document.querySelector(".Battle");
 
     const disc = document.createElement("img");
-    disc.src = "./images/ui/temp-disc.png"; // your placeholder disc
+    disc.src = "./images/ui/catch-disc.png";
     disc.classList.add("capture-disc");
     disc.style.position = "absolute";
     disc.style.width = "24px";
@@ -246,7 +246,6 @@ window.BattleAnimations = {
     disc.style.transform = "scale(1)";
     container.appendChild(disc);
 
-    // animate flying toward target
     await disc.animate(
       [
         { transform: `translate(0px, 0px) scale(1)` },
@@ -254,25 +253,19 @@ window.BattleAnimations = {
           transform: `translate(${caster.team === "player" ? 80 : -80}px, ${
             caster.team === "player" ? -40 : 40
           }px) scale(1.2)`,
+          opacity: 1,
+        },
+        {
+          transform: `translate(${caster.team === "player" ? 92 : -92}px, ${
+            caster.team === "player" ? -32 : 32
+          }px) scale(0.95)`,
+          opacity: 0,
         },
       ],
       {
-        duration: 500,
+        duration: 650,
         fill: "forwards",
         easing: "ease-out",
-      },
-    ).finished;
-
-    // bounce animation after landing
-    await disc.animate(
-      [
-        { transform: `scale(1.2) translateY(0px)` },
-        { transform: `scale(1.1) translateY(-5px)` },
-        { transform: `scale(1) translateY(0px)` },
-      ],
-      {
-        duration: 300,
-        easing: "ease-in-out",
       },
     ).finished;
 

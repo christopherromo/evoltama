@@ -22,20 +22,39 @@ body {
   margin: 0;
   overflow: hidden;
   font-family: "Ribeye", cursive;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.game-wrapper {
+  transform: scale(3);
+  transform-origin: center center;
+  display: inline-block;
+}
+
+@supports (zoom: 1) {
+  .game-wrapper {
+    transform: none;
+    zoom: 3;
+  }
 }
 
 .game-container {
   position: relative;
   width: 352px;
   height: 198px;
-  margin: 0 auto;
   outline: 1px solid white;
-
-  transform: scale(3) translateY(50%);
 }
 
 .game-container canvas {
+  display: block;
+  width: 352px;
+  height: 198px;
   background: #333;
   image-rendering: pixelated;
-  image-rendering: crisp-edges;
 }

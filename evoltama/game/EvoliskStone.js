@@ -16,6 +16,7 @@ class EvoliskStone extends GameObject {
     });
     this.storyFlag = config.storyFlag;
     this.evolisks = config.evolisks;
+    this.rewardConfig = config.rewardConfig || {};
 
     this.talking = [
       {
@@ -23,7 +24,7 @@ class EvoliskStone extends GameObject {
         events: [
           {
             type: "textMessage",
-            text: "You already took a disk! You can't have ANOTHER Evolisk for free! Not in this economy...",
+            text: "You already took a disc! You can't have ANOTHER Evolisk for free! Not in this economy...",
           },
         ],
       },
@@ -31,9 +32,13 @@ class EvoliskStone extends GameObject {
         events: [
           {
             type: "textMessage",
-            text: "You see two disks sitting on the stone, one appears to be calling your name...",
+            text: "You see two discs sitting on the stone, one appears to be calling your name...",
           },
-          { type: "evoliskMenu", evolisks: this.evolisks },
+          {
+            type: "evoliskMenu",
+            evolisks: this.evolisks,
+            rewardConfig: this.rewardConfig,
+          },
           { type: "addStoryFlag", flag: this.storyFlag },
         ],
       },

@@ -34,6 +34,11 @@ class ReplacementMenu {
   }
 
   init(container) {
+    if (!this.replacements.length) {
+      this.onComplete(null);
+      return;
+    }
+
     if (this.replacements[0].isPlayerControlled) {
       this.showMenu(container);
     } else {

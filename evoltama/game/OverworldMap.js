@@ -2,6 +2,34 @@
   this file contains the OverworldMap class, which is used to manage the overworld map in the game.
 */
 
+const wallAt = (x, y) => ({
+  [utils.asGridCoord(x, y)]: true,
+});
+
+const wallLine = (x1, y1, x2, y2) => {
+  const walls = {};
+  const xStep = x1 === x2 ? 0 : x1 < x2 ? 1 : -1;
+  const yStep = y1 === y2 ? 0 : y1 < y2 ? 1 : -1;
+
+  let x = x1;
+  let y = y1;
+
+  while (true) {
+    walls[utils.asGridCoord(x, y)] = true;
+
+    if (x === x2 && y === y2) {
+      break;
+    }
+
+    x += xStep;
+    y += yStep;
+  }
+
+  return walls;
+};
+
+const buildWalls = (...groups) => Object.assign({}, ...groups);
+
 class OverworldMap {
   constructor(config) {
     // set up the map and objects
@@ -9,6 +37,8 @@ class OverworldMap {
     this.gameObjects = {}; // live objects are in here
     this.configObjects = config.configObjects; // configuration content
     this.wildEncounterAreas = config.wildEncounterAreas || []; // encounter tiles
+    this.wildEncounterChance = config.wildEncounterChance;
+    this.wildEncounterConfig = config.wildEncounterConfig || null;
     this.healingSpot = config.healingSpot;
 
     this.cutsceneSpaces = config.cutsceneSpaces || {};
@@ -59,7 +89,7 @@ class OverworldMap {
       if (
         obj.intentPosition &&
         obj.intentPosition[0] === x &&
-        obj.intentPosition[0] === y
+        obj.intentPosition[1] === y
       ) {
         return true;
       }
@@ -69,7 +99,7 @@ class OverworldMap {
 
   mountObjects() {
     Object.keys(this.configObjects).forEach((key) => {
-      let object = this.configObjects[key];
+      let object = this.getObjectConfig(key);
       object.id = key;
 
       let instance;
@@ -87,6 +117,27 @@ class OverworldMap {
     });
   }
 
+  getObjectConfig(key) {
+    const object = { ...this.configObjects[key] };
+    const storyFlagPosition = object.storyFlagPosition;
+    const storyFlagBehaviorLoop = object.storyFlagBehaviorLoop;
+
+    if (storyFlagPosition && playerState.storyFlags[storyFlagPosition.flag]) {
+      object.x = utils.withGrid(storyFlagPosition.x);
+      object.y = utils.withGrid(storyFlagPosition.y);
+      object.direction = storyFlagPosition.direction || object.direction;
+    }
+
+    if (
+      storyFlagBehaviorLoop &&
+      playerState.storyFlags[storyFlagBehaviorLoop.flag]
+    ) {
+      object.behaviorLoop = storyFlagBehaviorLoop.behaviorLoop;
+    }
+
+    return object;
+  }
+
   // puts the game into "cutscene mode"
   async startCutscene(events) {
     this.isCutscenePlaying = true;
@@ -97,7 +148,7 @@ class OverworldMap {
         map: this,
       });
       const result = await eventHandler.init();
-      if (result === "LOST_BATTLE") {
+      if (result === "LOST_BATTLE" || result === "RAN_BATTLE") {
         break;
       }
     }
@@ -147,17 +198,23 @@ class OverworldMap {
     };
 
     if (!this.gameObjects["hero"]) {
-      console.error("Hero object not found!");
       return;
     }
 
-    this.gameObjects["hero"].x = healingSpot.x * 16;
-    this.gameObjects["hero"].y = healingSpot.y * 16;
+    const hero = this.gameObjects["hero"];
+    const wasCutscenePlaying = this.isCutscenePlaying;
+    this.isCutscenePlaying = true;
+
+    hero.x = healingSpot.x * 16;
+    hero.y = healingSpot.y * 16;
+    hero.movingProgressRemaining = 0;
+    hero.intentPosition = null;
 
     const healingMessage = new TextMessage({
       text: healingSpot.message,
       onComplete: () => {
         this.healPlayerEvolisks(healingSpot.heal);
+        this.isCutscenePlaying = wasCutscenePlaying;
       },
     });
 
@@ -170,12 +227,15 @@ class OverworldMap {
     if (healType === "full") {
       Object.values(playerState.evolisks).forEach((evolisk) => {
         evolisk.hp = evolisk.maxHp;
+        evolisk.status = null;
       });
     } else if (healType === "partial") {
       Object.values(playerState.evolisks).forEach((evolisk) => {
         evolisk.hp = Math.floor(evolisk.maxHp / 2);
       });
     }
+
+    utils.emitEvent("PlayerStateUpdated");
   }
 }
 
@@ -208,6 +268,11 @@ window.OverworldMaps = {
                 text: "Marvelous! You have saved the world!",
                 faceHero: "elderBeetle",
               },
+              {
+                type: "textMessage",
+                text: "I knew you could do it, thank you Kairo!",
+              },
+              { who: "elderBeetle", type: "stand", direction: "down" },
             ],
           },
           {
@@ -218,6 +283,7 @@ window.OverworldMaps = {
                 text: "I think you are ready, head to observatory north of the village!",
                 faceHero: "elderBeetle",
               },
+              { who: "elderBeetle", type: "stand", direction: "down" },
             ],
           },
           {
@@ -228,6 +294,7 @@ window.OverworldMaps = {
                 text: "Be careful, the canyon is very dangerous!",
                 faceHero: "elderBeetle",
               },
+              { who: "elderBeetle", type: "stand", direction: "down" },
             ],
           },
           {
@@ -238,6 +305,7 @@ window.OverworldMaps = {
                 text: "Head to the land of mushrooms!",
                 faceHero: "elderBeetle",
               },
+              { who: "elderBeetle", type: "stand", direction: "down" },
             ],
           },
           {
@@ -273,16 +341,28 @@ window.OverworldMaps = {
               },
               {
                 type: "textMessage",
-                text: "I have given you some capture discs and potions to help you in your journey, use them wisely!",
+                text: "You may have noticed I've given you some capture discs and potions, use them wisely.",
               },
               {
                 type: "textMessage",
-                text: "To the south of the village is the land of the mushrooms.",
+                text: "To the south of the village is the land of mushrooms.",
               },
               {
                 type: "textMessage",
                 text: "Head there first to build your strength!",
               },
+              { who: "elderBeetle", type: "stand", direction: "down" },
+            ],
+          },
+          {
+            required: ["INTRO_COMPLETE"],
+            events: [
+              {
+                type: "textMessage",
+                text: "You can find the Evolisk Stone in my house.",
+                faceHero: "elderBeetle",
+              },
+              { who: "elderBeetle", type: "stand", direction: "down" },
             ],
           },
           {
@@ -298,11 +378,11 @@ window.OverworldMaps = {
               },
               {
                 type: "textMessage",
-                text: "One of our townspeople has been corrupted and gone mad. She has locked herself in the old observatory.",
+                text: "Over the past few days, many Evolisks have gone missing, and so has Kiera.",
               },
               {
                 type: "textMessage",
-                text: "I fear that unless someone is able to stop her, she is going to destroy us and all the Evolisks!",
+                text: "There is powerful energy emanating from the old observatory, I believe that's where they are.",
               },
               {
                 type: "textMessage",
@@ -314,16 +394,18 @@ window.OverworldMaps = {
               },
               {
                 type: "textMessage",
-                text: "There is a magical stone in my house, I will allow you to have one of my Evolisks.",
+                text: "I will allow you to have one of my Evolisks.",
               },
               {
                 type: "textMessage",
-                text: "You must train them well if you're going to save us! I will help guide you.",
+                text: "In my house, there is an Evolisk Stone. You may choose one of two discs.",
               },
               {
                 type: "textMessage",
                 text: "Once you've chosen your new partner, return here to me.",
               },
+              { type: "addStoryFlag", flag: "INTRO_COMPLETE" },
+              { who: "elderBeetle", type: "stand", direction: "down" },
             ],
           },
         ],
@@ -332,23 +414,23 @@ window.OverworldMaps = {
         type: "Person",
         x: utils.withGrid(53),
         y: utils.withGrid(55),
+        storyFlagPosition: {
+          flag: "BEETLE_GUARD_1_MOVED",
+          x: 52,
+          y: 56,
+          direction: "down",
+        },
         src: "./images/characters/people/beetle-guard.png",
         talking: [
           {
-            required: ["MUSHROOM_COMPLETE"],
+            required: ["BEETLE_GUARD_1_MOVED"],
             events: [
               {
                 type: "textMessage",
                 text: "Right this way, Kairo!",
                 faceHero: "beetleGuard1",
               },
-              {
-                type: "removeWall",
-                x: 52,
-                y: 55,
-              },
-              { who: "beetleGuard1", type: "walk", direction: "left" },
-              { who: "beetleGuard1", type: "walk", direction: "down" },
+              { who: "beetleGuard1", type: "stand", direction: "down" },
             ],
           },
           {
@@ -359,13 +441,10 @@ window.OverworldMaps = {
                 text: "Good luck out there, Kairo!",
                 faceHero: "beetleGuard1",
               },
-              {
-                type: "removeWall",
-                x: 52,
-                y: 55,
-              },
-              { who: "beetleGuard1", type: "walk", direction: "left" },
               { who: "beetleGuard1", type: "walk", direction: "down" },
+              { who: "beetleGuard1", type: "walk", direction: "left" },
+              { who: "beetleGuard1", type: "stand", direction: "down" },
+              { type: "addStoryFlag", flag: "BEETLE_GUARD_1_MOVED" },
             ],
           },
           {
@@ -375,6 +454,7 @@ window.OverworldMaps = {
                 text: "Sorry, I can't let you through without the Elder Beetle's permission!",
                 faceHero: "beetleGuard1",
               },
+              { who: "beetleGuard1", type: "stand", direction: "down" },
             ],
           },
         ],
@@ -383,23 +463,22 @@ window.OverworldMaps = {
         type: "Person",
         x: utils.withGrid(69),
         y: utils.withGrid(42),
+        storyFlagPosition: {
+          flag: "BEETLE_GUARD_2_MOVED",
+          x: 70,
+          y: 41,
+          direction: "down",
+        },
         src: "./images/characters/people/beetle-guard.png",
         talking: [
           {
-            required: ["CANYON_COMPLETE"],
+            required: ["BEETLE_GUARD_2_MOVED"],
             events: [
               {
                 type: "textMessage",
-                text: "Right this way, Kairo!",
+                text: "Come on through, Kairo!",
                 faceHero: "beetleGuard2",
               },
-              {
-                type: "removeWall",
-                x: 69,
-                y: 41,
-              },
-              { who: "beetleGuard2", type: "walk", direction: "up" },
-              { who: "beetleGuard2", type: "walk", direction: "right" },
               { who: "beetleGuard2", type: "stand", direction: "down" },
             ],
           },
@@ -408,17 +487,21 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "Squishy sent you? Right this way, Kairo!",
+                text: "Squishy sent you?",
                 faceHero: "beetleGuard2",
               },
               {
-                type: "removeWall",
-                x: 69,
-                y: 41,
+                type: "textMessage",
+                text: "Alright, you may enter the canyon.",
               },
-              { who: "beetleGuard2", type: "walk", direction: "up" },
+              {
+                type: "textMessage",
+                text: "But beware, there are many wild Evolisks!",
+              },
               { who: "beetleGuard2", type: "walk", direction: "right" },
+              { who: "beetleGuard2", type: "walk", direction: "up" },
               { who: "beetleGuard2", type: "stand", direction: "down" },
+              { type: "addStoryFlag", flag: "BEETLE_GUARD_2_MOVED" },
             ],
           },
           {
@@ -428,6 +511,7 @@ window.OverworldMaps = {
                 text: "Sorry, the canyon is a very dangerous place!",
                 faceHero: "beetleGuard2",
               },
+              { who: "beetleGuard2", type: "stand", direction: "down" },
             ],
           },
         ],
@@ -436,23 +520,23 @@ window.OverworldMaps = {
         type: "Person",
         x: utils.withGrid(47),
         y: utils.withGrid(10),
+        storyFlagPosition: {
+          flag: "BEETLE_GUARD_3_MOVED",
+          x: 48,
+          y: 9,
+          direction: "down",
+        },
         src: "./images/characters/people/beetle-guard.png",
         talking: [
           {
-            required: ["GAME_COMPLETE"],
+            required: ["BEETLE_GUARD_3_MOVED"],
             events: [
               {
                 type: "textMessage",
-                text: "Right this way, Kairo!",
+                text: "This way, Kairo!",
                 faceHero: "beetleGuard3",
               },
-              {
-                type: "removeWall",
-                x: 46,
-                y: 10,
-              },
-              { who: "beetleGuard3", type: "walk", direction: "left" },
-              { who: "beetleGuard3", type: "walk", direction: "down" },
+              { who: "beetleGuard3", type: "stand", direction: "down" },
             ],
           },
           {
@@ -468,13 +552,10 @@ window.OverworldMaps = {
                 text: "Head to the observatory and save us!",
                 faceHero: "beetleGuard3",
               },
-              {
-                type: "removeWall",
-                x: 46,
-                y: 10,
-              },
-              { who: "beetleGuard3", type: "walk", direction: "left" },
-              { who: "beetleGuard3", type: "walk", direction: "down" },
+              { who: "beetleGuard3", type: "walk", direction: "up" },
+              { who: "beetleGuard3", type: "walk", direction: "right" },
+              { who: "beetleGuard3", type: "stand", direction: "down" },
+              { type: "addStoryFlag", flag: "BEETLE_GUARD_3_MOVED" },
             ],
           },
           {
@@ -484,452 +565,114 @@ window.OverworldMaps = {
                 text: "I can't let you go to the observatory yet, you'll get destroyed!",
                 faceHero: "beetleGuard3",
               },
+              { who: "beetleGuard3", type: "stand", direction: "down" },
             ],
           },
         ],
       },
     },
 
-    walls: {
+    walls: buildWalls(
       // rocks
-      [utils.asGridCoord(24, 33)]: true,
-      [utils.asGridCoord(25, 33)]: true,
-      [utils.asGridCoord(22, 37)]: true,
+      wallAt(24, 33),
+      wallAt(25, 33),
+      wallAt(22, 37),
 
       // signs
-      [utils.asGridCoord(26, 40)]: true,
-      [utils.asGridCoord(51, 44)]: true,
-      [utils.asGridCoord(58, 40)]: true,
-      [utils.asGridCoord(45, 21)]: true,
+      wallAt(26, 40),
+      wallAt(51, 44),
+      wallAt(58, 40),
+      wallAt(45, 21),
 
       // trees
-      [utils.asGridCoord(37, 25)]: true,
-      [utils.asGridCoord(38, 25)]: true,
-      [utils.asGridCoord(42, 27)]: true,
-      [utils.asGridCoord(43, 27)]: true,
+      wallAt(37, 25),
+      wallAt(38, 25),
+      wallAt(42, 27),
+      wallAt(43, 27),
 
       // house 1
-      [utils.asGridCoord(21, 27)]: true,
-      [utils.asGridCoord(21, 26)]: true,
-      [utils.asGridCoord(21, 25)]: true,
-      [utils.asGridCoord(21, 24)]: true,
-      [utils.asGridCoord(22, 27)]: true,
-      [utils.asGridCoord(23, 27)]: true,
-      [utils.asGridCoord(24, 27)]: true,
-      [utils.asGridCoord(25, 27)]: true,
-      [utils.asGridCoord(25, 26)]: true,
-      [utils.asGridCoord(25, 25)]: true,
-      [utils.asGridCoord(25, 24)]: true,
-      [utils.asGridCoord(22, 24)]: true,
-      [utils.asGridCoord(23, 24)]: true,
-      [utils.asGridCoord(24, 24)]: true,
+      wallLine(21, 24, 21, 27),
+      wallLine(22, 24, 24, 24),
+      wallLine(22, 27, 25, 27),
+      wallLine(25, 24, 25, 26),
 
       // house 2
-      [utils.asGridCoord(39, 37)]: true,
-      [utils.asGridCoord(40, 37)]: true,
-      [utils.asGridCoord(41, 37)]: true,
-      [utils.asGridCoord(42, 37)]: true,
-      [utils.asGridCoord(43, 37)]: true,
-
-      [utils.asGridCoord(39, 34)]: true,
-      [utils.asGridCoord(40, 34)]: true,
-      [utils.asGridCoord(41, 34)]: true,
-      [utils.asGridCoord(42, 34)]: true,
-      [utils.asGridCoord(43, 34)]: true,
-
-      [utils.asGridCoord(39, 35)]: true,
-      [utils.asGridCoord(39, 36)]: true,
-
-      [utils.asGridCoord(43, 35)]: true,
-      [utils.asGridCoord(43, 36)]: true,
+      wallLine(39, 34, 43, 34),
+      wallLine(39, 37, 43, 37),
+      wallLine(39, 35, 39, 36),
+      wallLine(43, 35, 43, 36),
 
       // house 3
-      [utils.asGridCoord(51, 37)]: true,
-      [utils.asGridCoord(52, 37)]: true,
-      [utils.asGridCoord(53, 37)]: true,
-      [utils.asGridCoord(54, 37)]: true,
-      [utils.asGridCoord(55, 37)]: true,
-
-      [utils.asGridCoord(51, 34)]: true,
-      [utils.asGridCoord(52, 34)]: true,
-      [utils.asGridCoord(53, 34)]: true,
-      [utils.asGridCoord(54, 34)]: true,
-      [utils.asGridCoord(55, 34)]: true,
-
-      [utils.asGridCoord(51, 35)]: true,
-      [utils.asGridCoord(51, 36)]: true,
-
-      [utils.asGridCoord(55, 35)]: true,
-      [utils.asGridCoord(55, 36)]: true,
+      wallLine(51, 34, 55, 34),
+      wallLine(51, 37, 55, 37),
+      wallLine(51, 35, 51, 36),
+      wallLine(55, 35, 55, 36),
 
       // house 4
-      [utils.asGridCoord(51, 25)]: true,
-      [utils.asGridCoord(52, 25)]: true,
-      [utils.asGridCoord(53, 25)]: true,
-      [utils.asGridCoord(54, 25)]: true,
-      [utils.asGridCoord(55, 25)]: true,
-
-      [utils.asGridCoord(51, 22)]: true,
-      [utils.asGridCoord(52, 22)]: true,
-      [utils.asGridCoord(53, 22)]: true,
-      [utils.asGridCoord(54, 22)]: true,
-      [utils.asGridCoord(55, 22)]: true,
-
-      [utils.asGridCoord(51, 24)]: true,
-      [utils.asGridCoord(51, 23)]: true,
-
-      [utils.asGridCoord(55, 24)]: true,
-      [utils.asGridCoord(55, 23)]: true,
+      wallLine(51, 22, 55, 22),
+      wallLine(51, 25, 55, 25),
+      wallLine(51, 23, 51, 24),
+      wallLine(55, 23, 55, 24),
 
       // first area
-
-      // left wall
-      [utils.asGridCoord(16, 19)]: true,
-      [utils.asGridCoord(16, 20)]: true,
-      [utils.asGridCoord(16, 21)]: true,
-      [utils.asGridCoord(16, 22)]: true,
-      [utils.asGridCoord(16, 23)]: true,
-      [utils.asGridCoord(16, 24)]: true,
-      [utils.asGridCoord(16, 25)]: true,
-      [utils.asGridCoord(16, 26)]: true,
-      [utils.asGridCoord(16, 27)]: true,
-      [utils.asGridCoord(16, 28)]: true,
-      [utils.asGridCoord(16, 29)]: true,
-      [utils.asGridCoord(16, 30)]: true,
-      [utils.asGridCoord(16, 31)]: true,
-      [utils.asGridCoord(16, 32)]: true,
-      [utils.asGridCoord(16, 33)]: true,
-      [utils.asGridCoord(16, 34)]: true,
-      [utils.asGridCoord(16, 35)]: true,
-      [utils.asGridCoord(16, 36)]: true,
-      [utils.asGridCoord(16, 37)]: true,
-      [utils.asGridCoord(16, 38)]: true,
-      [utils.asGridCoord(16, 39)]: true,
-      [utils.asGridCoord(16, 40)]: true,
-      [utils.asGridCoord(16, 41)]: true,
-      [utils.asGridCoord(16, 42)]: true,
-      [utils.asGridCoord(16, 43)]: true,
-      [utils.asGridCoord(16, 44)]: true,
-      [utils.asGridCoord(16, 45)]: true,
-      [utils.asGridCoord(16, 46)]: true,
-
-      // upper wall
-      [utils.asGridCoord(17, 18)]: true,
-      [utils.asGridCoord(18, 18)]: true,
-      [utils.asGridCoord(19, 18)]: true,
-      [utils.asGridCoord(20, 18)]: true,
-      [utils.asGridCoord(21, 18)]: true,
-      [utils.asGridCoord(22, 18)]: true,
-      [utils.asGridCoord(23, 18)]: true,
-      [utils.asGridCoord(24, 18)]: true,
-      [utils.asGridCoord(25, 18)]: true,
-      [utils.asGridCoord(26, 18)]: true,
-      [utils.asGridCoord(27, 18)]: true,
-      [utils.asGridCoord(28, 18)]: true,
-      [utils.asGridCoord(29, 18)]: true,
-
-      // right wall
-      [utils.asGridCoord(30, 19)]: true,
-      [utils.asGridCoord(30, 20)]: true,
-      [utils.asGridCoord(30, 21)]: true,
-      [utils.asGridCoord(30, 22)]: true,
-      [utils.asGridCoord(30, 23)]: true,
-      [utils.asGridCoord(30, 24)]: true,
-      [utils.asGridCoord(30, 25)]: true,
-      [utils.asGridCoord(30, 26)]: true,
-      [utils.asGridCoord(30, 27)]: true,
-      [utils.asGridCoord(30, 28)]: true,
-      [utils.asGridCoord(30, 29)]: true,
-      [utils.asGridCoord(30, 30)]: true,
-      [utils.asGridCoord(30, 31)]: true,
-      [utils.asGridCoord(30, 32)]: true,
-      [utils.asGridCoord(30, 33)]: true,
-      [utils.asGridCoord(30, 34)]: true,
-      [utils.asGridCoord(30, 35)]: true,
-      [utils.asGridCoord(30, 36)]: true,
-      [utils.asGridCoord(30, 37)]: true,
-      [utils.asGridCoord(30, 38)]: true,
-      [utils.asGridCoord(30, 39)]: true,
-      [utils.asGridCoord(31, 39)]: true,
-      [utils.asGridCoord(32, 39)]: true,
-      [utils.asGridCoord(30, 45)]: true,
-      [utils.asGridCoord(31, 45)]: true,
-      [utils.asGridCoord(32, 45)]: true,
-      [utils.asGridCoord(30, 46)]: true,
-
-      // bottom wall
-      [utils.asGridCoord(17, 47)]: true,
-      [utils.asGridCoord(18, 47)]: true,
-      [utils.asGridCoord(19, 47)]: true,
-      [utils.asGridCoord(20, 47)]: true,
-      [utils.asGridCoord(21, 47)]: true,
-      [utils.asGridCoord(22, 47)]: true,
-      [utils.asGridCoord(23, 47)]: true,
-      [utils.asGridCoord(24, 47)]: true,
-      [utils.asGridCoord(25, 47)]: true,
-      [utils.asGridCoord(26, 47)]: true,
-      [utils.asGridCoord(27, 47)]: true,
-      [utils.asGridCoord(28, 47)]: true,
-      [utils.asGridCoord(29, 47)]: true,
+      wallLine(16, 19, 16, 46),
+      wallLine(17, 18, 29, 18),
+      wallLine(30, 19, 30, 39),
+      wallLine(17, 47, 29, 47),
+      wallLine(30, 45, 32, 45),
+      wallAt(31, 39),
+      wallAt(32, 39),
+      wallAt(30, 46),
 
       // main area
-
-      // left wall
-      [utils.asGridCoord(32, 19)]: true,
-      [utils.asGridCoord(32, 20)]: true,
-      [utils.asGridCoord(32, 21)]: true,
-      [utils.asGridCoord(32, 22)]: true,
-      [utils.asGridCoord(32, 23)]: true,
-      [utils.asGridCoord(32, 24)]: true,
-      [utils.asGridCoord(32, 25)]: true,
-      [utils.asGridCoord(32, 26)]: true,
-      [utils.asGridCoord(32, 27)]: true,
-      [utils.asGridCoord(32, 28)]: true,
-      [utils.asGridCoord(32, 29)]: true,
-      [utils.asGridCoord(32, 30)]: true,
-      [utils.asGridCoord(32, 31)]: true,
-      [utils.asGridCoord(32, 32)]: true,
-      [utils.asGridCoord(32, 33)]: true,
-      [utils.asGridCoord(32, 34)]: true,
-      [utils.asGridCoord(32, 35)]: true,
-      [utils.asGridCoord(32, 36)]: true,
-      [utils.asGridCoord(32, 37)]: true,
-      [utils.asGridCoord(32, 38)]: true,
-      [utils.asGridCoord(32, 46)]: true,
-
-      // upper wall
-      [utils.asGridCoord(33, 18)]: true,
-      [utils.asGridCoord(34, 18)]: true,
-      [utils.asGridCoord(35, 18)]: true,
-      [utils.asGridCoord(36, 18)]: true,
-      [utils.asGridCoord(37, 18)]: true,
-      [utils.asGridCoord(38, 18)]: true,
-      [utils.asGridCoord(39, 18)]: true,
-      [utils.asGridCoord(40, 18)]: true,
-      [utils.asGridCoord(41, 18)]: true,
-      [utils.asGridCoord(42, 18)]: true,
-      [utils.asGridCoord(43, 18)]: true,
-      [utils.asGridCoord(44, 18)]: true,
-      [utils.asGridCoord(45, 18)]: true,
-
-      [utils.asGridCoord(49, 18)]: true,
-      [utils.asGridCoord(50, 18)]: true,
-      [utils.asGridCoord(51, 18)]: true,
-      [utils.asGridCoord(52, 18)]: true,
-      [utils.asGridCoord(53, 18)]: true,
-      [utils.asGridCoord(54, 18)]: true,
-      [utils.asGridCoord(55, 18)]: true,
-      [utils.asGridCoord(56, 18)]: true,
-      [utils.asGridCoord(57, 18)]: true,
-      [utils.asGridCoord(58, 18)]: true,
-      [utils.asGridCoord(59, 18)]: true,
-      [utils.asGridCoord(60, 18)]: true,
-      [utils.asGridCoord(61, 18)]: true,
-
-      // right wall
-      [utils.asGridCoord(62, 19)]: true,
-      [utils.asGridCoord(62, 20)]: true,
-      [utils.asGridCoord(62, 21)]: true,
-      [utils.asGridCoord(62, 22)]: true,
-      [utils.asGridCoord(62, 23)]: true,
-      [utils.asGridCoord(62, 24)]: true,
-      [utils.asGridCoord(62, 25)]: true,
-      [utils.asGridCoord(62, 26)]: true,
-      [utils.asGridCoord(62, 27)]: true,
-      [utils.asGridCoord(62, 28)]: true,
-      [utils.asGridCoord(62, 29)]: true,
-      [utils.asGridCoord(62, 30)]: true,
-      [utils.asGridCoord(62, 31)]: true,
-      [utils.asGridCoord(62, 32)]: true,
-      [utils.asGridCoord(62, 33)]: true,
-      [utils.asGridCoord(62, 34)]: true,
-      [utils.asGridCoord(62, 35)]: true,
-      [utils.asGridCoord(62, 36)]: true,
-      [utils.asGridCoord(62, 37)]: true,
-      [utils.asGridCoord(62, 38)]: true,
-      [utils.asGridCoord(62, 39)]: true,
-      [utils.asGridCoord(63, 39)]: true,
-      [utils.asGridCoord(64, 39)]: true,
-      [utils.asGridCoord(62, 45)]: true,
-      [utils.asGridCoord(63, 45)]: true,
-      [utils.asGridCoord(64, 45)]: true,
-      [utils.asGridCoord(62, 46)]: true,
-
-      // lower wall
-      [utils.asGridCoord(33, 47)]: true,
-      [utils.asGridCoord(34, 47)]: true,
-      [utils.asGridCoord(35, 47)]: true,
-      [utils.asGridCoord(36, 47)]: true,
-      [utils.asGridCoord(37, 47)]: true,
-      [utils.asGridCoord(38, 47)]: true,
-      [utils.asGridCoord(39, 47)]: true,
-      [utils.asGridCoord(40, 47)]: true,
-      [utils.asGridCoord(41, 47)]: true,
-      [utils.asGridCoord(42, 47)]: true,
-      [utils.asGridCoord(43, 47)]: true,
-      [utils.asGridCoord(44, 47)]: true,
-      [utils.asGridCoord(45, 47)]: true,
-      [utils.asGridCoord(46, 47)]: true,
-      [utils.asGridCoord(47, 47)]: true,
-      [utils.asGridCoord(48, 47)]: true,
-      [utils.asGridCoord(49, 47)]: true,
-      [utils.asGridCoord(50, 47)]: true,
-      [utils.asGridCoord(51, 47)]: true,
-
-      [utils.asGridCoord(55, 47)]: true,
-      [utils.asGridCoord(56, 47)]: true,
-      [utils.asGridCoord(57, 47)]: true,
-      [utils.asGridCoord(58, 47)]: true,
-      [utils.asGridCoord(59, 47)]: true,
-      [utils.asGridCoord(60, 47)]: true,
-      [utils.asGridCoord(61, 47)]: true,
+      wallLine(32, 19, 32, 38),
+      wallAt(32, 46),
+      wallLine(33, 18, 45, 18),
+      wallLine(49, 18, 61, 18),
+      wallLine(62, 19, 62, 39),
+      wallLine(63, 39, 64, 39),
+      wallLine(62, 45, 64, 45),
+      wallAt(62, 46),
+      wallLine(33, 47, 51, 47),
+      wallLine(55, 47, 61, 47),
 
       // lower cube
-
-      // hall
-      [utils.asGridCoord(51, 48)]: true,
-      [utils.asGridCoord(51, 49)]: true,
-      [utils.asGridCoord(51, 50)]: true,
-      [utils.asGridCoord(51, 51)]: true,
-      [utils.asGridCoord(50, 51)]: true,
-      [utils.asGridCoord(49, 51)]: true,
-
-      [utils.asGridCoord(55, 48)]: true,
-      [utils.asGridCoord(55, 49)]: true,
-      [utils.asGridCoord(55, 50)]: true,
-      [utils.asGridCoord(55, 51)]: true,
-      [utils.asGridCoord(56, 51)]: true,
-      [utils.asGridCoord(57, 51)]: true,
-
-      // left side
-      [utils.asGridCoord(48, 52)]: true,
-      [utils.asGridCoord(48, 53)]: true,
-      [utils.asGridCoord(48, 54)]: true,
-      [utils.asGridCoord(48, 55)]: true,
-      [utils.asGridCoord(48, 56)]: true,
-      [utils.asGridCoord(48, 57)]: true,
-      [utils.asGridCoord(48, 58)]: true,
-      [utils.asGridCoord(48, 59)]: true,
-
-      // right side
-      [utils.asGridCoord(58, 52)]: true,
-      [utils.asGridCoord(58, 53)]: true,
-      [utils.asGridCoord(58, 54)]: true,
-      [utils.asGridCoord(58, 55)]: true,
-      [utils.asGridCoord(58, 56)]: true,
-      [utils.asGridCoord(58, 57)]: true,
-      [utils.asGridCoord(58, 58)]: true,
-      [utils.asGridCoord(58, 59)]: true,
-
-      // back wall
-      [utils.asGridCoord(53, 60)]: true,
+      wallLine(51, 48, 51, 51),
+      wallLine(49, 51, 50, 51),
+      wallLine(55, 48, 55, 51),
+      wallLine(56, 51, 57, 51),
+      wallLine(48, 52, 48, 59),
+      wallLine(58, 52, 58, 59),
+      wallAt(53, 60),
 
       // right cube
-
-      // left wall
-      [utils.asGridCoord(64, 38)]: true,
-      [utils.asGridCoord(64, 46)]: true,
-
-      // bottom wall
-      [utils.asGridCoord(65, 47)]: true,
-      [utils.asGridCoord(66, 47)]: true,
-      [utils.asGridCoord(67, 47)]: true,
-      [utils.asGridCoord(68, 47)]: true,
-      [utils.asGridCoord(69, 47)]: true,
-      [utils.asGridCoord(70, 47)]: true,
-      [utils.asGridCoord(71, 47)]: true,
-      [utils.asGridCoord(72, 47)]: true,
-      [utils.asGridCoord(73, 47)]: true,
-
-      // top wall
-      [utils.asGridCoord(65, 37)]: true,
-      [utils.asGridCoord(66, 37)]: true,
-      [utils.asGridCoord(67, 37)]: true,
-      [utils.asGridCoord(68, 37)]: true,
-      [utils.asGridCoord(69, 37)]: true,
-      [utils.asGridCoord(70, 37)]: true,
-      [utils.asGridCoord(71, 37)]: true,
-      [utils.asGridCoord(72, 37)]: true,
-      [utils.asGridCoord(73, 37)]: true,
-
-      // back wall
-      [utils.asGridCoord(75, 42)]: true,
+      wallAt(64, 38),
+      wallAt(64, 46),
+      wallLine(65, 37, 73, 37),
+      wallLine(65, 47, 73, 47),
+      wallAt(75, 42),
 
       // upper cube
-
-      // back wall
-      [utils.asGridCoord(45, 17)]: true,
-      [utils.asGridCoord(45, 16)]: true,
-      [utils.asGridCoord(45, 15)]: true,
-      [utils.asGridCoord(45, 14)]: true,
-      [utils.asGridCoord(44, 14)]: true,
-      [utils.asGridCoord(43, 14)]: true,
-      [utils.asGridCoord(49, 17)]: true,
-      [utils.asGridCoord(49, 16)]: true,
-      [utils.asGridCoord(49, 15)]: true,
-      [utils.asGridCoord(49, 14)]: true,
-      [utils.asGridCoord(50, 14)]: true,
-      [utils.asGridCoord(51, 14)]: true,
-
-      // right wall
-      [utils.asGridCoord(52, 13)]: true,
-      [utils.asGridCoord(52, 12)]: true,
-      [utils.asGridCoord(52, 11)]: true,
-      [utils.asGridCoord(52, 10)]: true,
-      [utils.asGridCoord(52, 9)]: true,
-      [utils.asGridCoord(52, 8)]: true,
-      [utils.asGridCoord(52, 7)]: true,
-
-      // left wall
-      [utils.asGridCoord(42, 13)]: true,
-      [utils.asGridCoord(42, 12)]: true,
-      [utils.asGridCoord(42, 11)]: true,
-      [utils.asGridCoord(42, 10)]: true,
-      [utils.asGridCoord(42, 9)]: true,
-      [utils.asGridCoord(42, 8)]: true,
-      [utils.asGridCoord(42, 7)]: true,
-
-      // top wall
-      [utils.asGridCoord(43, 6)]: true,
-      [utils.asGridCoord(44, 6)]: true,
-      [utils.asGridCoord(45, 6)]: true,
-      [utils.asGridCoord(45, 5)]: true,
-      [utils.asGridCoord(46, 4)]: true,
-      [utils.asGridCoord(47, 4)]: true,
-      [utils.asGridCoord(48, 4)]: true,
-      [utils.asGridCoord(49, 5)]: true,
-      [utils.asGridCoord(49, 6)]: true,
-      [utils.asGridCoord(50, 6)]: true,
-      [utils.asGridCoord(51, 6)]: true,
+      wallLine(45, 14, 45, 17),
+      wallLine(43, 14, 44, 14),
+      wallLine(49, 14, 49, 17),
+      wallLine(50, 14, 51, 14),
+      wallLine(52, 7, 52, 13),
+      wallLine(42, 7, 42, 13),
+      wallLine(43, 6, 45, 6),
+      wallLine(46, 4, 48, 4),
+      wallLine(49, 6, 51, 6),
+      wallAt(45, 5),
+      wallAt(49, 5),
 
       // fences
-      [utils.asGridCoord(51, 10)]: true,
-      [utils.asGridCoord(50, 10)]: true,
-      [utils.asGridCoord(49, 10)]: true,
-      [utils.asGridCoord(48, 10)]: true,
-      [utils.asGridCoord(46, 10)]: true,
-      [utils.asGridCoord(45, 10)]: true,
-      [utils.asGridCoord(44, 10)]: true,
-      [utils.asGridCoord(43, 10)]: true,
-
-      [utils.asGridCoord(54, 55)]: true,
-      [utils.asGridCoord(55, 55)]: true,
-      [utils.asGridCoord(56, 55)]: true,
-      [utils.asGridCoord(57, 55)]: true,
-      [utils.asGridCoord(52, 55)]: true,
-      [utils.asGridCoord(51, 55)]: true,
-      [utils.asGridCoord(50, 55)]: true,
-      [utils.asGridCoord(49, 55)]: true,
-
-      [utils.asGridCoord(69, 38)]: true,
-      [utils.asGridCoord(69, 39)]: true,
-      [utils.asGridCoord(69, 40)]: true,
-      [utils.asGridCoord(69, 41)]: true,
-      [utils.asGridCoord(69, 43)]: true,
-      [utils.asGridCoord(69, 44)]: true,
-      [utils.asGridCoord(69, 45)]: true,
-      [utils.asGridCoord(69, 46)]: true,
-    },
+      wallLine(43, 10, 46, 10),
+      wallLine(48, 10, 51, 10),
+      wallLine(49, 55, 52, 55),
+      wallLine(54, 55, 57, 55),
+      wallLine(69, 38, 69, 41),
+      wallLine(69, 43, 69, 46),
+    ),
     cutsceneSpaces: {
       // houses
       [utils.asGridCoord(23, 28)]: [
@@ -1260,6 +1003,12 @@ window.OverworldMaps = {
         },
       ],
     },
+    healingSpot: {
+      x: 40,
+      y: 27,
+      message: "It's okay, Kairo! Try again when you feel ready!",
+      heal: "full",
+    },
   },
 
   House1: {
@@ -1275,77 +1024,34 @@ window.OverworldMaps = {
         y: utils.withGrid(10),
       },
     },
-    walls: {
+    walls: buildWalls(
       // tv
-      [utils.asGridCoord(7, 9)]: true,
+      wallAt(7, 9),
 
       // table
-      [utils.asGridCoord(4, 8)]: true,
-      [utils.asGridCoord(4, 7)]: true,
-      [utils.asGridCoord(3, 8)]: true,
-      [utils.asGridCoord(3, 7)]: true,
-      [utils.asGridCoord(2, 8)]: true,
-      [utils.asGridCoord(2, 7)]: true,
+      wallLine(2, 7, 4, 7),
+      wallLine(2, 8, 4, 8),
 
       // couch
-      [utils.asGridCoord(6, 7)]: true,
-      [utils.asGridCoord(7, 7)]: true,
-      [utils.asGridCoord(8, 7)]: true,
+      wallLine(6, 7, 8, 7),
 
       // kitchen
-      [utils.asGridCoord(2, 5)]: true,
-      [utils.asGridCoord(2, 4)]: true,
-      [utils.asGridCoord(2, 3)]: true,
-
-      [utils.asGridCoord(4, 5)]: true,
-      [utils.asGridCoord(4, 4)]: true,
-      [utils.asGridCoord(4, 3)]: true,
-
-      [utils.asGridCoord(5, 5)]: true,
-      [utils.asGridCoord(5, 4)]: true,
+      wallLine(2, 3, 2, 5),
+      wallLine(4, 3, 4, 5),
+      wallLine(5, 4, 5, 5),
 
       // bed
-      [utils.asGridCoord(6, 3)]: true,
-      [utils.asGridCoord(7, 3)]: true,
-      [utils.asGridCoord(7, 4)]: true,
-      [utils.asGridCoord(8, 3)]: true,
+      wallLine(6, 3, 8, 3),
+      wallAt(7, 4),
 
-      // bottom wall
-      [utils.asGridCoord(2, 10)]: true,
-      [utils.asGridCoord(3, 10)]: true,
-      [utils.asGridCoord(4, 10)]: true,
-      [utils.asGridCoord(5, 11)]: true,
-      [utils.asGridCoord(6, 10)]: true,
-      [utils.asGridCoord(7, 10)]: true,
-      [utils.asGridCoord(8, 10)]: true,
-
-      // right wall
-      [utils.asGridCoord(9, 9)]: true,
-      [utils.asGridCoord(9, 8)]: true,
-      [utils.asGridCoord(9, 7)]: true,
-      [utils.asGridCoord(9, 6)]: true,
-      [utils.asGridCoord(9, 5)]: true,
-      [utils.asGridCoord(9, 4)]: true,
-      [utils.asGridCoord(9, 3)]: true,
-
-      // back wall
-      [utils.asGridCoord(8, 2)]: true,
-      [utils.asGridCoord(7, 2)]: true,
-      [utils.asGridCoord(6, 2)]: true,
-      [utils.asGridCoord(5, 2)]: true,
-      [utils.asGridCoord(4, 2)]: true,
-      [utils.asGridCoord(3, 2)]: true,
-      [utils.asGridCoord(2, 2)]: true,
-
-      // left wall
-      [utils.asGridCoord(1, 9)]: true,
-      [utils.asGridCoord(1, 8)]: true,
-      [utils.asGridCoord(1, 7)]: true,
-      [utils.asGridCoord(1, 6)]: true,
-      [utils.asGridCoord(1, 5)]: true,
-      [utils.asGridCoord(1, 4)]: true,
-      [utils.asGridCoord(1, 3)]: true,
-    },
+      // room shell
+      wallLine(2, 10, 4, 10),
+      wallLine(6, 10, 8, 10),
+      wallAt(5, 11),
+      wallLine(9, 3, 9, 9),
+      wallLine(2, 2, 8, 2),
+      wallLine(1, 3, 1, 9),
+    ),
     cutsceneSpaces: {
       [utils.asGridCoord(5, 10)]: [
         {
@@ -1381,76 +1087,51 @@ window.OverworldMaps = {
         y: utils.withGrid(9),
         storyFlag: "FIRST_EVOLISK_STONE",
         evolisks: ["ep003", "ep008"],
+        rewardConfig: {
+          ep003: {
+            baseMaxHp: 40,
+            hp: 40,
+            maxHp: 40,
+            level: 1,
+            xp: 0,
+            maxXp: 100,
+          },
+          ep008: {
+            baseMaxHp: 40,
+            hp: 40,
+            maxHp: 40,
+            level: 1,
+            xp: 0,
+            maxXp: 100,
+          },
+        },
       },
     },
-    walls: {
+    walls: buildWalls(
       // table
-      [utils.asGridCoord(4, 8)]: true,
-      [utils.asGridCoord(4, 7)]: true,
-      [utils.asGridCoord(3, 8)]: true,
-      [utils.asGridCoord(3, 7)]: true,
-      [utils.asGridCoord(2, 8)]: true,
-      [utils.asGridCoord(2, 7)]: true,
+      wallLine(2, 7, 4, 7),
+      wallLine(2, 8, 4, 8),
 
       // couch
-      [utils.asGridCoord(6, 7)]: true,
-      [utils.asGridCoord(7, 7)]: true,
-      [utils.asGridCoord(8, 7)]: true,
+      wallLine(6, 7, 8, 7),
 
       // kitchen
-      [utils.asGridCoord(2, 5)]: true,
-      [utils.asGridCoord(2, 4)]: true,
-      [utils.asGridCoord(2, 3)]: true,
-
-      [utils.asGridCoord(4, 5)]: true,
-      [utils.asGridCoord(4, 4)]: true,
-      [utils.asGridCoord(4, 3)]: true,
-
-      [utils.asGridCoord(5, 5)]: true,
-      [utils.asGridCoord(5, 4)]: true,
+      wallLine(2, 3, 2, 5),
+      wallLine(4, 3, 4, 5),
+      wallLine(5, 4, 5, 5),
 
       // bed
-      [utils.asGridCoord(6, 3)]: true,
-      [utils.asGridCoord(7, 3)]: true,
-      [utils.asGridCoord(7, 4)]: true,
-      [utils.asGridCoord(8, 3)]: true,
+      wallLine(6, 3, 8, 3),
+      wallAt(7, 4),
 
-      // bottom wall
-      [utils.asGridCoord(2, 10)]: true,
-      [utils.asGridCoord(3, 10)]: true,
-      [utils.asGridCoord(4, 10)]: true,
-      [utils.asGridCoord(5, 11)]: true,
-      [utils.asGridCoord(6, 10)]: true,
-      [utils.asGridCoord(7, 10)]: true,
-      [utils.asGridCoord(8, 10)]: true,
-
-      // right wall
-      [utils.asGridCoord(9, 9)]: true,
-      [utils.asGridCoord(9, 8)]: true,
-      [utils.asGridCoord(9, 7)]: true,
-      [utils.asGridCoord(9, 6)]: true,
-      [utils.asGridCoord(9, 5)]: true,
-      [utils.asGridCoord(9, 4)]: true,
-      [utils.asGridCoord(9, 3)]: true,
-
-      // back wall
-      [utils.asGridCoord(8, 2)]: true,
-      [utils.asGridCoord(7, 2)]: true,
-      [utils.asGridCoord(6, 2)]: true,
-      [utils.asGridCoord(5, 2)]: true,
-      [utils.asGridCoord(4, 2)]: true,
-      [utils.asGridCoord(3, 2)]: true,
-      [utils.asGridCoord(2, 2)]: true,
-
-      // left wall
-      [utils.asGridCoord(1, 9)]: true,
-      [utils.asGridCoord(1, 8)]: true,
-      [utils.asGridCoord(1, 7)]: true,
-      [utils.asGridCoord(1, 6)]: true,
-      [utils.asGridCoord(1, 5)]: true,
-      [utils.asGridCoord(1, 4)]: true,
-      [utils.asGridCoord(1, 3)]: true,
-    },
+      // room shell
+      wallLine(2, 10, 4, 10),
+      wallLine(6, 10, 8, 10),
+      wallAt(5, 11),
+      wallLine(9, 3, 9, 9),
+      wallLine(2, 2, 8, 2),
+      wallLine(1, 3, 1, 9),
+    ),
     cutsceneSpaces: {
       [utils.asGridCoord(5, 10)]: [
         {
@@ -1517,77 +1198,34 @@ window.OverworldMaps = {
         ],
       },
     },
-    walls: {
+    walls: buildWalls(
       // tv
-      [utils.asGridCoord(3, 9)]: true,
+      wallAt(3, 9),
 
       // table
-      [utils.asGridCoord(6, 8)]: true,
-      [utils.asGridCoord(6, 7)]: true,
-      [utils.asGridCoord(7, 8)]: true,
-      [utils.asGridCoord(7, 7)]: true,
-      [utils.asGridCoord(8, 8)]: true,
-      [utils.asGridCoord(8, 7)]: true,
+      wallLine(6, 7, 8, 7),
+      wallLine(6, 8, 8, 8),
 
       // couch
-      [utils.asGridCoord(4, 7)]: true,
-      [utils.asGridCoord(3, 7)]: true,
-      [utils.asGridCoord(2, 7)]: true,
+      wallLine(2, 7, 4, 7),
 
       // kitchen
-      [utils.asGridCoord(8, 5)]: true,
-      [utils.asGridCoord(8, 4)]: true,
-      [utils.asGridCoord(8, 3)]: true,
-
-      [utils.asGridCoord(6, 5)]: true,
-      [utils.asGridCoord(6, 4)]: true,
-      [utils.asGridCoord(6, 3)]: true,
-
-      [utils.asGridCoord(5, 5)]: true,
-      [utils.asGridCoord(5, 4)]: true,
+      wallLine(8, 3, 8, 5),
+      wallLine(6, 3, 6, 5),
+      wallLine(5, 4, 5, 5),
 
       // bed
-      [utils.asGridCoord(4, 3)]: true,
-      [utils.asGridCoord(3, 3)]: true,
-      [utils.asGridCoord(3, 4)]: true,
-      [utils.asGridCoord(2, 3)]: true,
+      wallLine(2, 3, 4, 3),
+      wallAt(3, 4),
 
-      // bottom wall
-      [utils.asGridCoord(2, 10)]: true,
-      [utils.asGridCoord(3, 10)]: true,
-      [utils.asGridCoord(4, 10)]: true,
-      [utils.asGridCoord(5, 11)]: true,
-      [utils.asGridCoord(6, 10)]: true,
-      [utils.asGridCoord(7, 10)]: true,
-      [utils.asGridCoord(8, 10)]: true,
-
-      // right wall
-      [utils.asGridCoord(9, 9)]: true,
-      [utils.asGridCoord(9, 8)]: true,
-      [utils.asGridCoord(9, 7)]: true,
-      [utils.asGridCoord(9, 6)]: true,
-      [utils.asGridCoord(9, 5)]: true,
-      [utils.asGridCoord(9, 4)]: true,
-      [utils.asGridCoord(9, 3)]: true,
-
-      // back wall
-      [utils.asGridCoord(8, 2)]: true,
-      [utils.asGridCoord(7, 2)]: true,
-      [utils.asGridCoord(6, 2)]: true,
-      [utils.asGridCoord(5, 2)]: true,
-      [utils.asGridCoord(4, 2)]: true,
-      [utils.asGridCoord(3, 2)]: true,
-      [utils.asGridCoord(2, 2)]: true,
-
-      // left wall
-      [utils.asGridCoord(1, 9)]: true,
-      [utils.asGridCoord(1, 8)]: true,
-      [utils.asGridCoord(1, 7)]: true,
-      [utils.asGridCoord(1, 6)]: true,
-      [utils.asGridCoord(1, 5)]: true,
-      [utils.asGridCoord(1, 4)]: true,
-      [utils.asGridCoord(1, 3)]: true,
-    },
+      // room shell
+      wallLine(2, 10, 4, 10),
+      wallLine(6, 10, 8, 10),
+      wallAt(5, 11),
+      wallLine(9, 3, 9, 9),
+      wallLine(2, 2, 8, 2),
+      wallLine(1, 3, 1, 9),
+    ),
     cutsceneSpaces: {
       [utils.asGridCoord(5, 10)]: [
         {
@@ -1650,77 +1288,34 @@ window.OverworldMaps = {
         ],
       },
     },
-    walls: {
+    walls: buildWalls(
       // tv
-      [utils.asGridCoord(3, 9)]: true,
+      wallAt(3, 9),
 
       // table
-      [utils.asGridCoord(6, 8)]: true,
-      [utils.asGridCoord(6, 7)]: true,
-      [utils.asGridCoord(7, 8)]: true,
-      [utils.asGridCoord(7, 7)]: true,
-      [utils.asGridCoord(8, 8)]: true,
-      [utils.asGridCoord(8, 7)]: true,
+      wallLine(6, 7, 8, 7),
+      wallLine(6, 8, 8, 8),
 
       // couch
-      [utils.asGridCoord(4, 7)]: true,
-      [utils.asGridCoord(3, 7)]: true,
-      [utils.asGridCoord(2, 7)]: true,
+      wallLine(2, 7, 4, 7),
 
       // kitchen
-      [utils.asGridCoord(8, 5)]: true,
-      [utils.asGridCoord(8, 4)]: true,
-      [utils.asGridCoord(8, 3)]: true,
-
-      [utils.asGridCoord(6, 5)]: true,
-      [utils.asGridCoord(6, 4)]: true,
-      [utils.asGridCoord(6, 3)]: true,
-
-      [utils.asGridCoord(5, 5)]: true,
-      [utils.asGridCoord(5, 4)]: true,
+      wallLine(8, 3, 8, 5),
+      wallLine(6, 3, 6, 5),
+      wallLine(5, 4, 5, 5),
 
       // bed
-      [utils.asGridCoord(4, 3)]: true,
-      [utils.asGridCoord(3, 3)]: true,
-      [utils.asGridCoord(3, 4)]: true,
-      [utils.asGridCoord(2, 3)]: true,
+      wallLine(2, 3, 4, 3),
+      wallAt(3, 4),
 
-      // bottom wall
-      [utils.asGridCoord(2, 10)]: true,
-      [utils.asGridCoord(3, 10)]: true,
-      [utils.asGridCoord(4, 10)]: true,
-      [utils.asGridCoord(5, 11)]: true,
-      [utils.asGridCoord(6, 10)]: true,
-      [utils.asGridCoord(7, 10)]: true,
-      [utils.asGridCoord(8, 10)]: true,
-
-      // right wall
-      [utils.asGridCoord(9, 9)]: true,
-      [utils.asGridCoord(9, 8)]: true,
-      [utils.asGridCoord(9, 7)]: true,
-      [utils.asGridCoord(9, 6)]: true,
-      [utils.asGridCoord(9, 5)]: true,
-      [utils.asGridCoord(9, 4)]: true,
-      [utils.asGridCoord(9, 3)]: true,
-
-      // back wall
-      [utils.asGridCoord(8, 2)]: true,
-      [utils.asGridCoord(7, 2)]: true,
-      [utils.asGridCoord(6, 2)]: true,
-      [utils.asGridCoord(5, 2)]: true,
-      [utils.asGridCoord(4, 2)]: true,
-      [utils.asGridCoord(3, 2)]: true,
-      [utils.asGridCoord(2, 2)]: true,
-
-      // left wall
-      [utils.asGridCoord(1, 9)]: true,
-      [utils.asGridCoord(1, 8)]: true,
-      [utils.asGridCoord(1, 7)]: true,
-      [utils.asGridCoord(1, 6)]: true,
-      [utils.asGridCoord(1, 5)]: true,
-      [utils.asGridCoord(1, 4)]: true,
-      [utils.asGridCoord(1, 3)]: true,
-    },
+      // room shell
+      wallLine(2, 10, 4, 10),
+      wallLine(6, 10, 8, 10),
+      wallAt(5, 11),
+      wallLine(9, 3, 9, 9),
+      wallLine(2, 2, 8, 2),
+      wallLine(1, 3, 1, 9),
+    ),
     cutsceneSpaces: {
       [utils.asGridCoord(5, 10)]: [
         {
@@ -1764,7 +1359,7 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "Welcome to the land of mushrooms! My name is Cherry, I'm one of the Squelchy siblings.",
+                text: "Welcome to the land of mushrooms! My name is Cherry, I'm one of the squelchy sisters.",
                 faceHero: "cherry",
               },
               {
@@ -1775,6 +1370,7 @@ window.OverworldMaps = {
                 type: "textMessage",
                 text: "Should you fail in battle, you'll start over there in the nursery.",
               },
+              { who: "cherry", type: "stand", direction: "down" },
             ],
           },
         ],
@@ -1782,7 +1378,7 @@ window.OverworldMaps = {
       shelly: {
         type: "Person",
         x: utils.withGrid(12),
-        y: utils.withGrid(11),
+        y: utils.withGrid(12),
         src: "./images/characters/people/squelchy-shelly.png",
         talking: [
           {
@@ -1793,6 +1389,7 @@ window.OverworldMaps = {
                 text: "Wow, you showed those frogs who's boss!",
                 faceHero: "shelly",
               },
+              { who: "shelly", type: "stand", direction: "down" },
             ],
           },
           {
@@ -1800,26 +1397,48 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "Be careful at Froggerts' hideout, those frogs can be vicious!",
+                text: "Be careful at Froggerts' Hideout, those frogs can be vicious!",
                 faceHero: "shelly",
               },
+              { who: "shelly", type: "stand", direction: "down" },
             ],
           },
           {
             events: [
               {
                 type: "textMessage",
-                text: "I'm Shelly, one of the Squelchy siblings. We are the protectors of mushrooms.",
+                text: "I'm Shelly, one of the squelchy sisters. We are the protectors of mushrooms.",
                 faceHero: "shelly",
               },
               {
                 type: "textMessage",
-                text: "Our leader is the pink Squelchy, her name is Squishy!",
+                text: "These days, there isn't much to protect the mushrooms from.",
               },
               {
                 type: "textMessage",
-                text: "If you beat her in battle, she'll tell you where Froggerts' hideout is!",
+                text: "There was once a time, however, when a pack of frogs ruled this land.",
               },
+              {
+                type: "textMessage",
+                text: "They were hurting the mushrooms, so we chased them out!",
+              },
+              {
+                type: "textMessage",
+                text: "They now reside in a secret hideout.",
+              },
+              {
+                type: "textMessage",
+                text: "I personally wouldn't visit them, but I hear they have treasure.",
+              },
+              {
+                type: "textMessage",
+                text: "Our leader is the pink squelchy, her name is Squishy!",
+              },
+              {
+                type: "textMessage",
+                text: "If you defeat her in battle, perhaps she'll tell you where Froggerts' Hideout is.",
+              },
+              { who: "shelly", type: "stand", direction: "down" },
             ],
           },
         ],
@@ -1838,6 +1457,7 @@ window.OverworldMaps = {
                 text: "I knew you could do it!",
                 faceHero: "squishy",
               },
+              { who: "squishy", type: "stand", direction: "down" },
             ],
           },
           {
@@ -1848,17 +1468,25 @@ window.OverworldMaps = {
                 text: "Don't let those frogs bully you!",
                 faceHero: "squishy",
               },
+              { who: "squishy", type: "stand", direction: "down" },
             ],
           },
           {
             events: [
               {
                 type: "textMessage",
-                text: "Hey man! Feel like testing your strength?",
+                text: "So I guess you're here to test your strength?",
                 faceHero: "squishy",
+              },
+              {
+                type: "textMessage",
+                text: "Let's see if you can hold your own!",
               },
               { type: "battle", enemyId: "Squishy" },
               { type: "addStoryFlag", flag: "MUSHROOM_COMPLETE" },
+              { type: "addItem", actionId: "catchDisc", quantity: 3 },
+              { type: "addItem", actionId: "item_recoverHp", quantity: 2 },
+              { type: "addItem", actionId: "item_recoverStatus", quantity: 1 },
               {
                 type: "textMessage",
                 text: "Not bad!",
@@ -1866,7 +1494,11 @@ window.OverworldMaps = {
               },
               {
                 type: "textMessage",
-                text: "You can find Froggert's hideout east of the village.",
+                text: "The real test of strength, however, would be defeating Hoppins.",
+              },
+              {
+                type: "textMessage",
+                text: "You can find him at Froggerts' Hideout, located in the canyon east of the forest.",
               },
               {
                 type: "textMessage",
@@ -1874,203 +1506,63 @@ window.OverworldMaps = {
               },
               {
                 type: "textMessage",
+                text: "I've supplied you with some more potions and catch discs.",
+              },
+              {
+                type: "textMessage",
                 text: "Don't let those frogs bully you!",
               },
+              { who: "squishy", type: "stand", direction: "down" },
             ],
           },
         ],
       },
     },
     // create walls
-    walls: {
+    walls: buildWalls(
       // mushrooms
-      [utils.asGridCoord(16, 1)]: true,
-
-      [utils.asGridCoord(20, 2)]: true,
-
-      [utils.asGridCoord(13, 2)]: true,
-
-      [utils.asGridCoord(11, 3)]: true,
-      [utils.asGridCoord(12, 3)]: true,
-      [utils.asGridCoord(13, 3)]: true,
-      [utils.asGridCoord(11, 4)]: true,
-      [utils.asGridCoord(12, 4)]: true,
-
-      [utils.asGridCoord(21, 3)]: true,
-      [utils.asGridCoord(22, 3)]: true,
-      [utils.asGridCoord(23, 3)]: true,
-      [utils.asGridCoord(22, 4)]: true,
-      [utils.asGridCoord(23, 4)]: true,
-
-      [utils.asGridCoord(23, 7)]: true,
-
-      [utils.asGridCoord(6, 8)]: true,
-
-      [utils.asGridCoord(8, 13)]: true,
-
-      [utils.asGridCoord(10, 15)]: true,
-
-      [utils.asGridCoord(18, 15)]: true,
-
-      [utils.asGridCoord(23, 16)]: true,
-
-      [utils.asGridCoord(19, 8)]: true,
-
-      [utils.asGridCoord(16, 9)]: true,
-      [utils.asGridCoord(17, 9)]: true,
-      [utils.asGridCoord(18, 9)]: true,
-      [utils.asGridCoord(16, 10)]: true,
-      [utils.asGridCoord(17, 10)]: true,
-
-      [utils.asGridCoord(19, 11)]: true,
-      [utils.asGridCoord(20, 11)]: true,
-      [utils.asGridCoord(21, 11)]: true,
-      [utils.asGridCoord(20, 12)]: true,
-
-      [utils.asGridCoord(3, 13)]: true,
-      [utils.asGridCoord(4, 13)]: true,
-      [utils.asGridCoord(5, 13)]: true,
-      [utils.asGridCoord(4, 14)]: true,
-      [utils.asGridCoord(5, 14)]: true,
-
-      [utils.asGridCoord(13, 18)]: true,
-      [utils.asGridCoord(14, 18)]: true,
-      [utils.asGridCoord(15, 18)]: true,
-      [utils.asGridCoord(13, 19)]: true,
-      [utils.asGridCoord(14, 19)]: true,
-
-      [utils.asGridCoord(5, 18)]: true,
-      [utils.asGridCoord(6, 18)]: true,
-      [utils.asGridCoord(5, 19)]: true,
-      [utils.asGridCoord(6, 19)]: true,
-
-      [utils.asGridCoord(22, 19)]: true,
-      [utils.asGridCoord(23, 19)]: true,
-      [utils.asGridCoord(22, 20)]: true,
-      [utils.asGridCoord(23, 20)]: true,
+      wallAt(16, 1),
+      wallAt(20, 2),
+      wallAt(13, 2),
+      wallLine(11, 3, 13, 3),
+      wallLine(11, 4, 12, 4),
+      wallLine(21, 3, 23, 3),
+      wallLine(22, 4, 23, 4),
+      wallAt(23, 7),
+      wallAt(6, 8),
+      wallAt(8, 13),
+      wallAt(10, 15),
+      wallAt(18, 15),
+      wallAt(23, 16),
+      wallAt(19, 8),
+      wallLine(16, 9, 18, 9),
+      wallLine(16, 10, 17, 10),
+      wallLine(19, 11, 21, 11),
+      wallAt(20, 12),
+      wallLine(3, 13, 5, 13),
+      wallLine(4, 14, 5, 14),
+      wallLine(13, 18, 15, 18),
+      wallLine(13, 19, 14, 19),
+      wallLine(5, 18, 6, 18),
+      wallLine(5, 19, 6, 19),
+      wallLine(22, 19, 23, 19),
+      wallLine(22, 20, 23, 20),
 
       // rocks
-      [utils.asGridCoord(3, 4)]: true,
-      [utils.asGridCoord(3, 4)]: true,
-      [utils.asGridCoord(4, 3)]: true,
-      [utils.asGridCoord(4, 4)]: true,
-      [utils.asGridCoord(11, 6)]: true,
-      [utils.asGridCoord(12, 6)]: true,
-      [utils.asGridCoord(19, 17)]: true,
-      [utils.asGridCoord(19, 18)]: true,
-      [utils.asGridCoord(20, 17)]: true,
-      [utils.asGridCoord(20, 18)]: true,
+      wallAt(3, 3),
+      wallAt(3, 4),
+      wallAt(4, 3),
+      wallAt(4, 4),
+      wallLine(11, 6, 12, 6),
+      wallLine(19, 17, 20, 17),
+      wallLine(19, 18, 20, 18),
 
-      // left wall
-      [utils.asGridCoord(0, 0)]: true,
-      [utils.asGridCoord(0, 1)]: true,
-      [utils.asGridCoord(0, 2)]: true,
-      [utils.asGridCoord(0, 3)]: true,
-      [utils.asGridCoord(0, 4)]: true,
-      [utils.asGridCoord(0, 5)]: true,
-      [utils.asGridCoord(0, 6)]: true,
-      [utils.asGridCoord(0, 7)]: true,
-      [utils.asGridCoord(0, 8)]: true,
-      [utils.asGridCoord(0, 9)]: true,
-      [utils.asGridCoord(0, 10)]: true,
-      [utils.asGridCoord(0, 11)]: true,
-      [utils.asGridCoord(0, 12)]: true,
-      [utils.asGridCoord(0, 13)]: true,
-      [utils.asGridCoord(0, 14)]: true,
-      [utils.asGridCoord(0, 15)]: true,
-      [utils.asGridCoord(0, 16)]: true,
-      [utils.asGridCoord(0, 17)]: true,
-      [utils.asGridCoord(0, 18)]: true,
-      [utils.asGridCoord(0, 19)]: true,
-      [utils.asGridCoord(0, 20)]: true,
-      [utils.asGridCoord(0, 21)]: true,
-      [utils.asGridCoord(0, 22)]: true,
-      [utils.asGridCoord(0, 23)]: true,
-      [utils.asGridCoord(0, 24)]: true,
-
-      // top wall
-      [utils.asGridCoord(1, 0)]: true,
-      [utils.asGridCoord(2, 0)]: true,
-      [utils.asGridCoord(3, 0)]: true,
-      [utils.asGridCoord(4, 0)]: true,
-      [utils.asGridCoord(5, 0)]: true,
-      [utils.asGridCoord(6, 0)]: true,
-      [utils.asGridCoord(7, 0)]: true,
-      [utils.asGridCoord(8, 0)]: true,
-      [utils.asGridCoord(9, 0)]: true,
-      [utils.asGridCoord(10, 0)]: true,
-      [utils.asGridCoord(11, 0)]: true,
-      [utils.asGridCoord(12, 0)]: true,
-      [utils.asGridCoord(13, 0)]: true,
-      [utils.asGridCoord(14, 0)]: true,
-      [utils.asGridCoord(15, 0)]: true,
-      [utils.asGridCoord(16, 0)]: true,
-      [utils.asGridCoord(17, 0)]: true,
-      [utils.asGridCoord(18, 0)]: true,
-      [utils.asGridCoord(19, 0)]: true,
-      [utils.asGridCoord(20, 0)]: true,
-      [utils.asGridCoord(21, 0)]: true,
-      [utils.asGridCoord(22, 0)]: true,
-      [utils.asGridCoord(23, 0)]: true,
-      [utils.asGridCoord(24, 0)]: true,
-      [utils.asGridCoord(25, 0)]: true,
-
-      // bottom wall
-      [utils.asGridCoord(0, 23)]: true,
-      [utils.asGridCoord(1, 23)]: true,
-      [utils.asGridCoord(2, 23)]: true,
-      [utils.asGridCoord(3, 23)]: true,
-      [utils.asGridCoord(4, 23)]: true,
-      [utils.asGridCoord(5, 23)]: true,
-      [utils.asGridCoord(6, 23)]: true,
-      [utils.asGridCoord(7, 23)]: true,
-      [utils.asGridCoord(8, 23)]: true,
-      [utils.asGridCoord(9, 23)]: true,
-      [utils.asGridCoord(10, 23)]: true,
-      [utils.asGridCoord(11, 23)]: true,
-      [utils.asGridCoord(12, 23)]: true,
-      [utils.asGridCoord(13, 23)]: true,
-      [utils.asGridCoord(14, 23)]: true,
-      [utils.asGridCoord(15, 23)]: true,
-      [utils.asGridCoord(16, 23)]: true,
-      [utils.asGridCoord(17, 23)]: true,
-      [utils.asGridCoord(18, 23)]: true,
-      [utils.asGridCoord(19, 23)]: true,
-      [utils.asGridCoord(20, 23)]: true,
-      [utils.asGridCoord(21, 23)]: true,
-      [utils.asGridCoord(22, 23)]: true,
-      [utils.asGridCoord(23, 23)]: true,
-      [utils.asGridCoord(24, 23)]: true,
-      [utils.asGridCoord(25, 23)]: true,
-      [utils.asGridCoord(26, 23)]: true,
-
-      // right wall
-      [utils.asGridCoord(25, 0)]: true,
-      [utils.asGridCoord(25, 1)]: true,
-      [utils.asGridCoord(25, 2)]: true,
-      [utils.asGridCoord(25, 3)]: true,
-      [utils.asGridCoord(25, 4)]: true,
-      [utils.asGridCoord(25, 5)]: true,
-      [utils.asGridCoord(25, 6)]: true,
-      [utils.asGridCoord(25, 7)]: true,
-      [utils.asGridCoord(25, 8)]: true,
-      [utils.asGridCoord(25, 9)]: true,
-      [utils.asGridCoord(25, 10)]: true,
-      [utils.asGridCoord(25, 11)]: true,
-      [utils.asGridCoord(25, 12)]: true,
-      [utils.asGridCoord(25, 13)]: true,
-      [utils.asGridCoord(25, 14)]: true,
-      [utils.asGridCoord(25, 15)]: true,
-      [utils.asGridCoord(25, 16)]: true,
-      [utils.asGridCoord(25, 17)]: true,
-      [utils.asGridCoord(25, 18)]: true,
-      [utils.asGridCoord(25, 19)]: true,
-      [utils.asGridCoord(25, 20)]: true,
-      [utils.asGridCoord(25, 21)]: true,
-      [utils.asGridCoord(25, 22)]: true,
-      [utils.asGridCoord(25, 23)]: true,
-      [utils.asGridCoord(25, 24)]: true,
-    },
+      // border walls
+      wallLine(0, 0, 0, 24),
+      wallLine(1, 0, 25, 0),
+      wallLine(0, 23, 26, 23),
+      wallLine(25, 0, 25, 24),
+    ),
     cutsceneSpaces: {
       [utils.asGridCoord(18, 1)]: [
         {
@@ -2095,11 +1587,17 @@ window.OverworldMaps = {
       // this won't be a valid encounter area
       { xMin: 11, xMax: 24, yMin: 1, yMax: 13, exclude: true },
     ],
+    wildEncounterConfig: {
+      evoliskIds: ["ee003", "ee006", "ee007", "ee008"],
+      minLevel: 1,
+      maxLevel: 2,
+    },
+    wildEncounterChance: 0.1,
 
     healingSpot: {
       x: 23, // healing area x-coordinate
       y: 11, // healing area y-coordinate
-      message: "You've been teleported to the mushroom nursery!",
+      message: "You wake up in the mushroom nursery fully restored!",
       heal: "full", // healing type ("full" or "partial")
     },
   },
@@ -2118,10 +1616,35 @@ window.OverworldMaps = {
         x: utils.withGrid(1),
         y: utils.withGrid(9),
       },
+      evoliskStone: {
+        type: "EvoliskStone",
+        x: utils.withGrid(22),
+        y: utils.withGrid(2),
+        storyFlag: "SECOND_EVOLISK_STONE",
+        evolisks: ["ep004", "ep006"],
+        rewardConfig: {
+          ep004: {
+            baseMaxHp: 45,
+            hp: 55,
+            maxHp: 55,
+            level: 3,
+            xp: 0,
+            maxXp: 100,
+          },
+          ep006: {
+            baseMaxHp: 45,
+            hp: 55,
+            maxHp: 55,
+            level: 3,
+            xp: 0,
+            maxXp: 100,
+          },
+        },
+      },
       squeak: {
         type: "Person",
-        x: utils.withGrid(7),
-        y: utils.withGrid(6),
+        x: utils.withGrid(15),
+        y: utils.withGrid(7),
         src: "./images/characters/people/froggert-squeak.png",
         talking: [
           {
@@ -2129,22 +1652,40 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "You defeated Hoppins?! I think we found our new leader!",
+                text: "You defeated Hoppins?! Don't expect me to call you boss now...",
                 faceHero: "squeak",
               },
+              { who: "squeak", type: "stand", direction: "down" },
             ],
           },
           {
             events: [
               {
                 type: "textMessage",
-                text: "Welcome to the canyon, this is our hideout!",
+                text: "What are you doing here?!",
                 faceHero: "squeak",
               },
               {
                 type: "textMessage",
-                text: "Our leader is an orange frog named Hoppins, defeat him and you can take his place!",
+                text: "I'd fight you right now if it weren't so hot...",
               },
+              {
+                type: "textMessage",
+                text: "Name's Squeak.",
+              },
+              {
+                type: "textMessage",
+                text: "Secret treasure? Good luck, Pip's on watch duty.",
+              },
+              {
+                type: "textMessage",
+                text: "If I were you, I'd leave right now.",
+              },
+              {
+                type: "textMessage",
+                text: "You don't want to get on the boss's bad side.",
+              },
+              { who: "squeak", type: "stand", direction: "down" },
             ],
           },
         ],
@@ -2152,26 +1693,50 @@ window.OverworldMaps = {
       pip: {
         type: "Person",
         x: utils.withGrid(12),
-        y: utils.withGrid(4),
+        y: utils.withGrid(1),
+        storyFlagPosition: {
+          flag: "PIP_MOVED",
+          x: 13,
+          y: 2,
+          direction: "down",
+        },
         src: "./images/characters/people/froggert-pip.png",
         talking: [
           {
-            required: ["GAME_COMPLETE"],
+            required: ["PIP_MOVED"],
             events: [
               {
                 type: "textMessage",
-                text: "Wow, you really did it!",
+                text: "You didn't tell him... right?",
                 faceHero: "pip",
               },
+              { who: "pip", type: "stand", direction: "down" },
             ],
           },
           {
             events: [
               {
                 type: "textMessage",
-                text: "Hey, did you hear that some weirdo took over the old Observatory?",
+                text: "So you think you can invade our hideout and steal our treasure?",
                 faceHero: "pip",
               },
+              {
+                type: "textMessage",
+                text: "Not on my watch!",
+              },
+              { type: "battle", enemyId: "Pip" },
+              {
+                type: "textMessage",
+                text: "Okay, okay, you win!",
+                faceHero: "pip",
+              },
+              {
+                type: "textMessage",
+                text: "Let's keep this a secret from Hoppins, alright?",
+              },
+              { who: "pip", type: "walk", direction: "right" },
+              { who: "pip", type: "walk", direction: "down" },
+              { type: "addStoryFlag", flag: "PIP_MOVED" },
             ],
           },
         ],
@@ -2187,9 +1752,10 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "You did it! You saved us all!",
+                text: "Not bad, kid.",
                 faceHero: "hoppins",
               },
+              { who: "hoppins", type: "stand", direction: "down" },
             ],
           },
           {
@@ -2197,9 +1763,10 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "What are you still doing here? Save us all!",
+                text: "What are you still doing here?!",
                 faceHero: "hoppins",
               },
+              { who: "hoppins", type: "stand", direction: "down" },
             ],
           },
           {
@@ -2211,6 +1778,9 @@ window.OverworldMaps = {
               },
               { type: "battle", enemyId: "Hoppins" },
               { type: "addStoryFlag", flag: "CANYON_COMPLETE" },
+              { type: "addItem", actionId: "catchDisc", quantity: 1 },
+              { type: "addItem", actionId: "item_recoverHp", quantity: 2 },
+              { type: "addItem", actionId: "item_recoverStatus", quantity: 2 },
               {
                 type: "textMessage",
                 text: "Can't believe I lost...",
@@ -2218,237 +1788,97 @@ window.OverworldMaps = {
               },
               {
                 type: "textMessage",
-                text: "Maybe you could do something about that person up at the observatory!",
+                text: "Not bad, kid.",
               },
               {
                 type: "textMessage",
-                text: "Tell the guard you defeated me, he'll know your tough stuff!",
+                text: "Maybe you could do something about that person up at the observatory...",
               },
+              {
+                type: "textMessage",
+                text: "Tell the guard you defeated me, he'll know you're tough stuff.",
+              },
+              {
+                type: "textMessage",
+                text: "I've given you a bit of treasure, don't waste it all in one place.",
+              },
+              {
+                type: "textMessage",
+                text: "Go on, save us all!",
+              },
+              { who: "hoppins", type: "stand", direction: "down" },
             ],
           },
         ],
       },
     },
     // walls & objects
-    walls: {
-      // left wall
-      [utils.asGridCoord(0, 0)]: true,
-      [utils.asGridCoord(0, 1)]: true,
-      [utils.asGridCoord(0, 2)]: true,
-      [utils.asGridCoord(0, 3)]: true,
-      [utils.asGridCoord(0, 4)]: true,
-      [utils.asGridCoord(0, 5)]: true,
-      [utils.asGridCoord(0, 6)]: true,
-      [utils.asGridCoord(0, 7)]: true,
-      [utils.asGridCoord(0, 8)]: true,
-      [utils.asGridCoord(0, 9)]: true,
-      [utils.asGridCoord(0, 10)]: true,
-      [utils.asGridCoord(0, 11)]: true,
-      [utils.asGridCoord(0, 12)]: true,
-      [utils.asGridCoord(0, 13)]: true,
-      [utils.asGridCoord(0, 14)]: true,
-      [utils.asGridCoord(0, 15)]: true,
-      [utils.asGridCoord(0, 16)]: true,
-      [utils.asGridCoord(0, 17)]: true,
-      [utils.asGridCoord(0, 18)]: true,
-      [utils.asGridCoord(0, 19)]: true,
-      [utils.asGridCoord(0, 20)]: true,
-      [utils.asGridCoord(0, 21)]: true,
-      [utils.asGridCoord(0, 22)]: true,
-
-      // top wall
-      [utils.asGridCoord(1, 0)]: true,
-      [utils.asGridCoord(2, 0)]: true,
-      [utils.asGridCoord(3, 0)]: true,
-      [utils.asGridCoord(4, 0)]: true,
-      [utils.asGridCoord(5, 0)]: true,
-      [utils.asGridCoord(6, 0)]: true,
-      [utils.asGridCoord(7, 0)]: true,
-      [utils.asGridCoord(8, 0)]: true,
-      [utils.asGridCoord(9, 0)]: true,
-      [utils.asGridCoord(10, 0)]: true,
-      [utils.asGridCoord(11, 0)]: true,
-      [utils.asGridCoord(12, 0)]: true,
-      [utils.asGridCoord(13, 0)]: true,
-      [utils.asGridCoord(14, 0)]: true,
-      [utils.asGridCoord(15, 0)]: true,
-      [utils.asGridCoord(16, 0)]: true,
-      [utils.asGridCoord(17, 0)]: true,
-      [utils.asGridCoord(18, 0)]: true,
-      [utils.asGridCoord(19, 0)]: true,
-      [utils.asGridCoord(20, 0)]: true,
-      [utils.asGridCoord(21, 0)]: true,
-      [utils.asGridCoord(22, 0)]: true,
-      [utils.asGridCoord(23, 0)]: true,
-      [utils.asGridCoord(24, 0)]: true,
-
-      // right wall
-      [utils.asGridCoord(25, 0)]: true,
-      [utils.asGridCoord(25, 1)]: true,
-      [utils.asGridCoord(25, 2)]: true,
-      [utils.asGridCoord(25, 3)]: true,
-      [utils.asGridCoord(25, 4)]: true,
-      [utils.asGridCoord(25, 5)]: true,
-      [utils.asGridCoord(25, 6)]: true,
-      [utils.asGridCoord(25, 7)]: true,
-      [utils.asGridCoord(25, 8)]: true,
-      [utils.asGridCoord(25, 9)]: true,
-      [utils.asGridCoord(25, 10)]: true,
-      [utils.asGridCoord(25, 11)]: true,
-      [utils.asGridCoord(25, 12)]: true,
-      [utils.asGridCoord(25, 13)]: true,
-      [utils.asGridCoord(25, 14)]: true,
-      [utils.asGridCoord(25, 15)]: true,
-      [utils.asGridCoord(25, 16)]: true,
-      [utils.asGridCoord(25, 17)]: true,
-      [utils.asGridCoord(25, 18)]: true,
-      [utils.asGridCoord(25, 19)]: true,
-      [utils.asGridCoord(25, 20)]: true,
-      [utils.asGridCoord(25, 21)]: true,
-      [utils.asGridCoord(25, 22)]: true,
-
-      // bottom wall
-      [utils.asGridCoord(1, 23)]: true,
-      [utils.asGridCoord(2, 23)]: true,
-      [utils.asGridCoord(3, 23)]: true,
-      [utils.asGridCoord(4, 23)]: true,
-      [utils.asGridCoord(5, 23)]: true,
-      [utils.asGridCoord(6, 23)]: true,
-      [utils.asGridCoord(7, 23)]: true,
-      [utils.asGridCoord(8, 23)]: true,
-      [utils.asGridCoord(9, 23)]: true,
-      [utils.asGridCoord(10, 23)]: true,
-      [utils.asGridCoord(11, 23)]: true,
-      [utils.asGridCoord(12, 23)]: true,
-      [utils.asGridCoord(13, 23)]: true,
-      [utils.asGridCoord(14, 23)]: true,
-      [utils.asGridCoord(15, 23)]: true,
-      [utils.asGridCoord(16, 23)]: true,
-      [utils.asGridCoord(17, 23)]: true,
-      [utils.asGridCoord(18, 23)]: true,
-      [utils.asGridCoord(19, 23)]: true,
-      [utils.asGridCoord(20, 23)]: true,
-      [utils.asGridCoord(21, 23)]: true,
-      [utils.asGridCoord(22, 23)]: true,
-      [utils.asGridCoord(23, 23)]: true,
-      [utils.asGridCoord(24, 23)]: true,
+    walls: buildWalls(
+      // border walls
+      wallLine(0, 0, 0, 22),
+      wallLine(1, 0, 24, 0),
+      wallLine(25, 0, 25, 22),
+      wallLine(1, 23, 24, 23),
 
       // river
-      [utils.asGridCoord(1, 5)]: true,
-      [utils.asGridCoord(2, 5)]: true,
-      [utils.asGridCoord(3, 5)]: true,
-      [utils.asGridCoord(3, 6)]: true,
-      [utils.asGridCoord(4, 6)]: true,
-      [utils.asGridCoord(5, 6)]: true,
-      [utils.asGridCoord(5, 7)]: true,
-      [utils.asGridCoord(6, 7)]: true,
-      [utils.asGridCoord(6, 8)]: true,
-      [utils.asGridCoord(6, 10)]: true,
-      [utils.asGridCoord(6, 11)]: true,
-      [utils.asGridCoord(6, 12)]: true,
-      [utils.asGridCoord(6, 13)]: true,
-
-      [utils.asGridCoord(7, 13)]: true,
-      [utils.asGridCoord(8, 13)]: true,
-      [utils.asGridCoord(9, 13)]: true,
-      [utils.asGridCoord(10, 13)]: true,
-      [utils.asGridCoord(11, 13)]: true,
-      [utils.asGridCoord(12, 13)]: true,
-      [utils.asGridCoord(13, 13)]: true,
-      [utils.asGridCoord(14, 13)]: true,
-      [utils.asGridCoord(15, 13)]: true,
-      [utils.asGridCoord(16, 13)]: true,
-      [utils.asGridCoord(17, 13)]: true,
-
-      [utils.asGridCoord(19, 13)]: true,
-      [utils.asGridCoord(20, 13)]: true,
-      [utils.asGridCoord(21, 13)]: true,
-      [utils.asGridCoord(22, 13)]: true,
-      [utils.asGridCoord(23, 13)]: true,
-      [utils.asGridCoord(24, 13)]: true,
+      wallLine(1, 5, 3, 5),
+      wallAt(3, 6),
+      wallLine(4, 6, 5, 6),
+      wallAt(5, 7),
+      wallAt(6, 7),
+      wallAt(6, 8),
+      wallLine(6, 10, 6, 13),
+      wallLine(7, 13, 17, 13),
+      wallLine(19, 13, 24, 13),
 
       // skull
-      [utils.asGridCoord(8, 10)]: true,
-      [utils.asGridCoord(8, 11)]: true,
-      [utils.asGridCoord(8, 12)]: true,
+      wallLine(8, 10, 8, 12),
 
       // bushes
-      [utils.asGridCoord(3, 8)]: true,
-      [utils.asGridCoord(4, 11)]: true,
-      [utils.asGridCoord(10, 7)]: true,
-      [utils.asGridCoord(13, 11)]: true,
-      [utils.asGridCoord(21, 11)]: true,
-      [utils.asGridCoord(5, 2)]: true,
-      [utils.asGridCoord(12, 2)]: true,
-      [utils.asGridCoord(23, 7)]: true,
-      [utils.asGridCoord(23, 6)]: true,
-      [utils.asGridCoord(21, 19)]: true,
-      [utils.asGridCoord(21, 20)]: true,
-      [utils.asGridCoord(9, 15)]: true,
-      [utils.asGridCoord(9, 16)]: true,
-      [utils.asGridCoord(5, 19)]: true,
-      [utils.asGridCoord(5, 20)]: true,
+      wallAt(3, 8),
+      wallAt(4, 11),
+      wallAt(10, 7),
+      wallAt(13, 11),
+      wallAt(21, 11),
+      wallAt(5, 2),
+      wallAt(12, 2),
+      wallAt(23, 7),
+      wallAt(23, 6),
+      wallAt(21, 19),
+      wallAt(21, 20),
+      wallAt(9, 15),
+      wallAt(9, 16),
+      wallAt(5, 19),
+      wallAt(5, 20),
 
       // canyon walls
-      [utils.asGridCoord(1, 3)]: true,
-      [utils.asGridCoord(2, 3)]: true,
-      [utils.asGridCoord(3, 3)]: true,
-
-      [utils.asGridCoord(4, 4)]: true,
-      [utils.asGridCoord(5, 4)]: true,
-      [utils.asGridCoord(6, 4)]: true,
-
-      [utils.asGridCoord(7, 5)]: true,
-
-      [utils.asGridCoord(9, 5)]: true,
-      [utils.asGridCoord(10, 5)]: true,
-      [utils.asGridCoord(11, 5)]: true,
-      [utils.asGridCoord(12, 5)]: true,
-
-      [utils.asGridCoord(13, 4)]: true,
-      [utils.asGridCoord(14, 4)]: true,
-      [utils.asGridCoord(15, 4)]: true,
-      [utils.asGridCoord(16, 4)]: true,
-      [utils.asGridCoord(17, 4)]: true,
-
-      [utils.asGridCoord(18, 3)]: true,
-      [utils.asGridCoord(19, 3)]: true,
-      [utils.asGridCoord(20, 3)]: true,
-
-      [utils.asGridCoord(21, 4)]: true,
-      [utils.asGridCoord(22, 4)]: true,
-
-      [utils.asGridCoord(23, 3)]: true,
-      [utils.asGridCoord(24, 3)]: true,
+      wallLine(1, 3, 3, 3),
+      wallLine(4, 4, 6, 4),
+      wallAt(7, 5),
+      wallLine(9, 5, 12, 5),
+      wallLine(13, 4, 17, 4),
+      wallLine(18, 3, 20, 3),
+      wallLine(21, 4, 22, 4),
+      wallLine(23, 3, 24, 3),
 
       // rocks
-      [utils.asGridCoord(2, 11)]: true,
-
-      [utils.asGridCoord(10, 9)]: true,
-
-      [utils.asGridCoord(13, 3)]: true,
-
-      [utils.asGridCoord(20, 2)]: true,
-
-      [utils.asGridCoord(16, 11)]: true,
-
-      [utils.asGridCoord(19, 7)]: true,
-
-      [utils.asGridCoord(15, 16)]: true,
-
-      [utils.asGridCoord(6, 16)]: true,
+      wallAt(2, 11),
+      wallAt(10, 9),
+      wallAt(13, 3),
+      wallAt(20, 2),
+      wallAt(16, 11),
+      wallAt(19, 7),
+      wallAt(15, 16),
+      wallAt(6, 16),
 
       // trees
-      [utils.asGridCoord(13, 9)]: true,
-
-      [utils.asGridCoord(21, 17)]: true,
-
-      [utils.asGridCoord(12, 19)]: true,
-      [utils.asGridCoord(12, 20)]: true,
-
-      [utils.asGridCoord(3, 1)]: true,
-      [utils.asGridCoord(3, 2)]: true,
-    },
+      wallAt(13, 9),
+      wallAt(21, 17),
+      wallAt(12, 19),
+      wallAt(12, 20),
+      wallAt(3, 1),
+      wallAt(3, 2),
+    ),
 
     cutsceneSpaces: {
       [utils.asGridCoord(1, 9)]: [
@@ -2467,17 +1897,35 @@ window.OverworldMaps = {
     },
 
     wildEncounterAreas: [
+      // keep the entry corridor safe so the map transition can finish cleanly
+      { xMin: 1, xMax: 4, yMin: 8, yMax: 10, exclude: true },
+
       // excluded area (around froggert at 7,6)
       { xMin: 5, xMax: 9, yMin: 4, yMax: 8, exclude: true },
 
       // full encounter zone (whole map)
       { xMin: 1, xMax: 24, yMin: 1, yMax: 22 },
     ],
+    wildEncounterConfig: {
+      evoliskIds: [
+        "ee001",
+        "ee002",
+        "ee003",
+        "ee004",
+        "ee005",
+        "ee006",
+        "ee007",
+        "ee008",
+      ],
+      minLevel: 3,
+      maxLevel: 4,
+    },
+    wildEncounterChance: 0.07,
 
     healingSpot: {
-      x: 3, // healing area x-coordinate
-      y: 9, // healing area y-coordinate
-      message: "You've been teleported to a healing area in the Canyon Wild!",
+      x: 8, // healing area x-coordinate
+      y: 18, // healing area y-coordinate
+      message: "The healing winds of the canyon restore you!",
       heal: "full", // healing type ("full" or "partial")
     },
   },
@@ -2495,154 +1943,47 @@ window.OverworldMaps = {
         y: utils.withGrid(56),
       },
     },
-    walls: {
+    walls: buildWalls(
       // back wall
-      [utils.asGridCoord(29, 57)]: true,
-      [utils.asGridCoord(28, 57)]: true,
-      [utils.asGridCoord(30, 57)]: true,
+      wallLine(28, 57, 30, 57),
 
       // left wall
-      [utils.asGridCoord(27, 56)]: true,
-      [utils.asGridCoord(27, 55)]: true,
-      [utils.asGridCoord(27, 54)]: true,
-      [utils.asGridCoord(27, 53)]: true,
-      [utils.asGridCoord(27, 52)]: true,
-      [utils.asGridCoord(27, 51)]: true,
-      [utils.asGridCoord(27, 50)]: true,
-      [utils.asGridCoord(27, 49)]: true,
-      [utils.asGridCoord(26, 49)]: true,
-      [utils.asGridCoord(25, 49)]: true,
-      [utils.asGridCoord(24, 49)]: true,
-      [utils.asGridCoord(23, 49)]: true,
-      [utils.asGridCoord(22, 49)]: true,
-      [utils.asGridCoord(21, 48)]: true,
-      [utils.asGridCoord(21, 47)]: true,
-      [utils.asGridCoord(21, 46)]: true,
-      [utils.asGridCoord(21, 45)]: true,
-      [utils.asGridCoord(21, 44)]: true,
-      [utils.asGridCoord(21, 43)]: true,
-      [utils.asGridCoord(21, 42)]: true,
-      [utils.asGridCoord(21, 41)]: true,
-      [utils.asGridCoord(21, 40)]: true,
-      [utils.asGridCoord(22, 39)]: true,
-      [utils.asGridCoord(23, 39)]: true,
-      [utils.asGridCoord(24, 39)]: true,
-      [utils.asGridCoord(25, 39)]: true,
-      [utils.asGridCoord(26, 39)]: true,
-      [utils.asGridCoord(27, 39)]: true,
-      [utils.asGridCoord(27, 38)]: true,
-      [utils.asGridCoord(27, 37)]: true,
-      [utils.asGridCoord(27, 36)]: true,
-      [utils.asGridCoord(27, 35)]: true,
-      [utils.asGridCoord(27, 34)]: true,
-      [utils.asGridCoord(27, 33)]: true,
-      [utils.asGridCoord(26, 33)]: true,
-      [utils.asGridCoord(25, 33)]: true,
-      [utils.asGridCoord(24, 33)]: true,
-      [utils.asGridCoord(23, 33)]: true,
-      [utils.asGridCoord(22, 33)]: true,
-      [utils.asGridCoord(21, 33)]: true,
-      [utils.asGridCoord(20, 33)]: true,
-      [utils.asGridCoord(19, 32)]: true,
-      [utils.asGridCoord(19, 31)]: true,
-      [utils.asGridCoord(19, 30)]: true,
-      [utils.asGridCoord(19, 29)]: true,
-      [utils.asGridCoord(19, 28)]: true,
+      wallLine(27, 49, 27, 56),
+      wallLine(22, 49, 26, 49),
+      wallLine(21, 40, 21, 48),
+      wallLine(22, 39, 27, 39),
+      wallLine(27, 33, 27, 38),
+      wallLine(20, 33, 26, 33),
+      wallLine(19, 28, 19, 32),
 
-      // back wall
-      [utils.asGridCoord(20, 27)]: true,
-      [utils.asGridCoord(21, 27)]: true,
-      [utils.asGridCoord(22, 27)]: true,
-      [utils.asGridCoord(23, 27)]: true,
-      [utils.asGridCoord(24, 27)]: true,
-      [utils.asGridCoord(25, 27)]: true,
-      [utils.asGridCoord(26, 27)]: true,
-      [utils.asGridCoord(27, 27)]: true,
-      [utils.asGridCoord(28, 26)]: true,
-      [utils.asGridCoord(29, 26)]: true,
-      [utils.asGridCoord(30, 26)]: true,
-      [utils.asGridCoord(31, 27)]: true,
-      [utils.asGridCoord(32, 27)]: true,
-      [utils.asGridCoord(33, 27)]: true,
-      [utils.asGridCoord(34, 27)]: true,
-      [utils.asGridCoord(35, 27)]: true,
-      [utils.asGridCoord(36, 27)]: true,
-      [utils.asGridCoord(37, 27)]: true,
-      [utils.asGridCoord(38, 27)]: true,
+      // upper wall
+      wallLine(20, 27, 27, 27),
+      wallLine(31, 27, 38, 27),
+      wallLine(28, 26, 30, 26),
 
       // right wall
-      [utils.asGridCoord(39, 28)]: true,
-      [utils.asGridCoord(39, 29)]: true,
-      [utils.asGridCoord(39, 30)]: true,
-      [utils.asGridCoord(39, 31)]: true,
-      [utils.asGridCoord(39, 32)]: true,
-      [utils.asGridCoord(38, 33)]: true,
-      [utils.asGridCoord(37, 33)]: true,
-      [utils.asGridCoord(36, 33)]: true,
-      [utils.asGridCoord(35, 33)]: true,
-      [utils.asGridCoord(34, 33)]: true,
-      [utils.asGridCoord(33, 33)]: true,
-      [utils.asGridCoord(32, 33)]: true,
-      [utils.asGridCoord(31, 33)]: true,
-      [utils.asGridCoord(31, 34)]: true,
-      [utils.asGridCoord(31, 35)]: true,
-      [utils.asGridCoord(31, 36)]: true,
-      [utils.asGridCoord(31, 37)]: true,
-      [utils.asGridCoord(31, 38)]: true,
-      [utils.asGridCoord(31, 39)]: true,
-      [utils.asGridCoord(32, 39)]: true,
-      [utils.asGridCoord(33, 39)]: true,
-      [utils.asGridCoord(34, 39)]: true,
-      [utils.asGridCoord(35, 39)]: true,
-      [utils.asGridCoord(36, 39)]: true,
-      [utils.asGridCoord(37, 40)]: true,
-      [utils.asGridCoord(37, 41)]: true,
-      [utils.asGridCoord(37, 42)]: true,
-      [utils.asGridCoord(37, 43)]: true,
-      [utils.asGridCoord(37, 44)]: true,
-      [utils.asGridCoord(37, 45)]: true,
-      [utils.asGridCoord(37, 46)]: true,
-      [utils.asGridCoord(37, 47)]: true,
-      [utils.asGridCoord(37, 48)]: true,
-      [utils.asGridCoord(36, 49)]: true,
-      [utils.asGridCoord(35, 49)]: true,
-      [utils.asGridCoord(34, 49)]: true,
-      [utils.asGridCoord(33, 49)]: true,
-      [utils.asGridCoord(32, 49)]: true,
-      [utils.asGridCoord(31, 49)]: true,
-      [utils.asGridCoord(31, 50)]: true,
-      [utils.asGridCoord(31, 51)]: true,
-      [utils.asGridCoord(31, 52)]: true,
-      [utils.asGridCoord(31, 53)]: true,
-      [utils.asGridCoord(31, 54)]: true,
-      [utils.asGridCoord(31, 55)]: true,
-      [utils.asGridCoord(31, 56)]: true,
-      [utils.asGridCoord(31, 57)]: true,
+      wallLine(39, 28, 39, 32),
+      wallLine(31, 33, 38, 33),
+      wallLine(31, 34, 31, 39),
+      wallLine(32, 39, 36, 39),
+      wallLine(37, 40, 37, 48),
+      wallLine(31, 49, 36, 49),
+      wallLine(31, 50, 31, 57),
+
+      // diagonal corners
+      wallAt(21, 48),
+      wallAt(19, 32),
+      wallAt(28, 26),
+      wallAt(30, 26),
+      wallAt(38, 33),
+      wallAt(37, 40),
 
       // well
-      [utils.asGridCoord(25, 45)]: true,
-      [utils.asGridCoord(26, 45)]: true,
-      [utils.asGridCoord(27, 45)]: true,
-      [utils.asGridCoord(28, 45)]: true,
-      [utils.asGridCoord(29, 45)]: true,
-      [utils.asGridCoord(30, 45)]: true,
-      [utils.asGridCoord(31, 45)]: true,
-      [utils.asGridCoord(32, 45)]: true,
-      [utils.asGridCoord(33, 45)]: true,
-
-      [utils.asGridCoord(25, 43)]: true,
-      [utils.asGridCoord(26, 43)]: true,
-      [utils.asGridCoord(27, 43)]: true,
-      [utils.asGridCoord(28, 43)]: true,
-      [utils.asGridCoord(29, 43)]: true,
-      [utils.asGridCoord(30, 43)]: true,
-      [utils.asGridCoord(31, 43)]: true,
-      [utils.asGridCoord(32, 43)]: true,
-      [utils.asGridCoord(33, 43)]: true,
-
-      [utils.asGridCoord(25, 44)]: true,
-      [utils.asGridCoord(33, 44)]: true,
-    },
+      wallLine(25, 45, 33, 45),
+      wallLine(25, 43, 33, 43),
+      wallAt(25, 44),
+      wallAt(33, 44),
+    ),
     cutsceneSpaces: {
       [utils.asGridCoord(28, 56)]: [
         {
@@ -2743,7 +2084,7 @@ window.OverworldMaps = {
         x: utils.withGrid(32),
         y: utils.withGrid(23),
         src: "./images/characters/people/kiera.png",
-        behaviorLoop: [{ type: "stand", direction: "up", time: 100 }],
+        behaviorLoop: [{ type: "stand", direction: "up", time: 1000 }],
         talking: [
           {
             required: ["GAME_COMPLETE"],
@@ -2759,23 +2100,59 @@ window.OverworldMaps = {
             events: [
               {
                 type: "textMessage",
-                text: "My name is Kiera, and I plan to take over the world!",
+                text: "Hello, Kairo.",
                 faceHero: "kiera",
               },
               {
                 type: "textMessage",
-                text: "You dare to challenge me?",
+                text: "I assume you are here to stop me.",
+              },
+              {
+                type: "textMessage",
+                text: "The Evolisks are magical creatures, who knows what they're capable of!",
+              },
+              {
+                type: "textMessage",
+                text: "I want to be the one who discovers their secret powers.",
+              },
+              {
+                type: "textMessage",
+                text: "Won't you join me, Kairo?",
+              },
+              {
+                type: "textMessage",
+                text: "...",
+              },
+              {
+                type: "textMessage",
+                text: "I see.",
+              },
+              {
+                type: "textMessage",
+                text: "Well, in that case...",
               },
               { type: "battle", enemyId: "Kiera" },
               { type: "addStoryFlag", flag: "GAME_COMPLETE" },
               {
                 type: "textMessage",
-                text: "All I wanted was a friend...",
+                text: "All I wanted was to be someone special...",
                 faceHero: "kiera",
               },
               {
                 type: "textMessage",
-                text: "We can be friends? I would love to be friends!",
+                text: "I'm special to you?",
+              },
+              {
+                type: "textMessage",
+                text: "Kairo, that means the world to me!",
+              },
+              {
+                type: "textMessage",
+                text: "I love all of the Evolisks I've taken, but I'll return them to their rightful homes.",
+              },
+              {
+                type: "textMessage",
+                text: "I think I'll admire them for what they are, wonderful magical creatures!",
               },
               {
                 type: "textMessage",
@@ -2786,193 +2163,69 @@ window.OverworldMaps = {
         ],
       },
     },
-    walls: {
-      // back wall
-      [utils.asGridCoord(31, 56)]: true,
-      [utils.asGridCoord(32, 56)]: true,
-      [utils.asGridCoord(33, 56)]: true,
+    walls: buildWalls(
+      // entry/back wall
+      wallLine(31, 56, 33, 56),
+      wallLine(27, 55, 30, 55),
+      wallLine(34, 55, 37, 55),
 
-      [utils.asGridCoord(30, 55)]: true,
-      [utils.asGridCoord(29, 55)]: true,
-      [utils.asGridCoord(28, 55)]: true,
-      [utils.asGridCoord(27, 55)]: true,
+      // left wall arc
+      wallLine(26, 48, 26, 54),
+      wallLine(27, 47, 30, 47),
+      wallLine(30, 45, 30, 46),
+      wallAt(29, 44),
+      wallLine(28, 41, 28, 43),
+      wallAt(29, 40),
+      wallLine(30, 37, 30, 39),
+      wallLine(25, 37, 29, 37),
+      wallLine(24, 22, 24, 36),
 
-      [utils.asGridCoord(34, 55)]: true,
-      [utils.asGridCoord(35, 55)]: true,
-      [utils.asGridCoord(36, 55)]: true,
-      [utils.asGridCoord(37, 55)]: true,
+      // upper wall
+      wallLine(25, 21, 39, 21),
 
-      // left wall
-      [utils.asGridCoord(26, 54)]: true,
-      [utils.asGridCoord(26, 53)]: true,
-      [utils.asGridCoord(26, 52)]: true,
-      [utils.asGridCoord(26, 51)]: true,
-      [utils.asGridCoord(26, 50)]: true,
-      [utils.asGridCoord(26, 49)]: true,
-      [utils.asGridCoord(26, 48)]: true,
-      [utils.asGridCoord(27, 47)]: true,
-      [utils.asGridCoord(28, 47)]: true,
-      [utils.asGridCoord(29, 47)]: true,
-      [utils.asGridCoord(30, 47)]: true,
-      [utils.asGridCoord(30, 46)]: true,
-      [utils.asGridCoord(30, 45)]: true,
-      [utils.asGridCoord(29, 44)]: true,
-      [utils.asGridCoord(28, 43)]: true,
-      [utils.asGridCoord(28, 42)]: true,
-      [utils.asGridCoord(28, 41)]: true,
-      [utils.asGridCoord(29, 40)]: true,
-      [utils.asGridCoord(30, 39)]: true,
-      [utils.asGridCoord(30, 38)]: true,
-      [utils.asGridCoord(30, 37)]: true,
-      [utils.asGridCoord(29, 37)]: true,
-      [utils.asGridCoord(28, 37)]: true,
-      [utils.asGridCoord(27, 37)]: true,
-      [utils.asGridCoord(26, 37)]: true,
-      [utils.asGridCoord(25, 37)]: true,
-      [utils.asGridCoord(24, 36)]: true,
-      [utils.asGridCoord(24, 35)]: true,
-      [utils.asGridCoord(24, 34)]: true,
-      [utils.asGridCoord(24, 33)]: true,
-      [utils.asGridCoord(24, 32)]: true,
-      [utils.asGridCoord(24, 31)]: true,
-      [utils.asGridCoord(24, 30)]: true,
-      [utils.asGridCoord(24, 29)]: true,
-      [utils.asGridCoord(24, 28)]: true,
-      [utils.asGridCoord(24, 27)]: true,
-      [utils.asGridCoord(24, 26)]: true,
-      [utils.asGridCoord(24, 25)]: true,
-      [utils.asGridCoord(24, 24)]: true,
-      [utils.asGridCoord(24, 23)]: true,
-      [utils.asGridCoord(24, 22)]: true,
-
-      // back wall
-      [utils.asGridCoord(25, 21)]: true,
-      [utils.asGridCoord(26, 21)]: true,
-      [utils.asGridCoord(27, 21)]: true,
-      [utils.asGridCoord(28, 21)]: true,
-      [utils.asGridCoord(29, 21)]: true,
-      [utils.asGridCoord(30, 21)]: true,
-      [utils.asGridCoord(31, 21)]: true,
-      [utils.asGridCoord(32, 21)]: true,
-      [utils.asGridCoord(33, 21)]: true,
-      [utils.asGridCoord(34, 21)]: true,
-      [utils.asGridCoord(35, 21)]: true,
-      [utils.asGridCoord(36, 21)]: true,
-      [utils.asGridCoord(37, 21)]: true,
-      [utils.asGridCoord(38, 21)]: true,
-      [utils.asGridCoord(39, 21)]: true,
-
-      // right wall
-      [utils.asGridCoord(40, 36)]: true,
-      [utils.asGridCoord(40, 35)]: true,
-      [utils.asGridCoord(40, 34)]: true,
-      [utils.asGridCoord(40, 33)]: true,
-      [utils.asGridCoord(40, 32)]: true,
-      [utils.asGridCoord(40, 31)]: true,
-      [utils.asGridCoord(40, 30)]: true,
-      [utils.asGridCoord(40, 29)]: true,
-      [utils.asGridCoord(40, 28)]: true,
-      [utils.asGridCoord(40, 27)]: true,
-      [utils.asGridCoord(40, 26)]: true,
-      [utils.asGridCoord(40, 25)]: true,
-      [utils.asGridCoord(40, 24)]: true,
-      [utils.asGridCoord(40, 23)]: true,
-      [utils.asGridCoord(40, 22)]: true,
-      [utils.asGridCoord(39, 37)]: true,
-      [utils.asGridCoord(38, 37)]: true,
-      [utils.asGridCoord(37, 37)]: true,
-      [utils.asGridCoord(36, 37)]: true,
-      [utils.asGridCoord(35, 37)]: true,
-      [utils.asGridCoord(34, 37)]: true,
-      [utils.asGridCoord(34, 38)]: true,
-      [utils.asGridCoord(34, 39)]: true,
-      [utils.asGridCoord(35, 40)]: true,
-      [utils.asGridCoord(36, 41)]: true,
-      [utils.asGridCoord(36, 42)]: true,
-      [utils.asGridCoord(36, 43)]: true,
-      [utils.asGridCoord(35, 44)]: true,
-      [utils.asGridCoord(34, 45)]: true,
-      [utils.asGridCoord(34, 46)]: true,
-      [utils.asGridCoord(34, 47)]: true,
-      [utils.asGridCoord(35, 47)]: true,
-      [utils.asGridCoord(36, 47)]: true,
-      [utils.asGridCoord(37, 47)]: true,
-      [utils.asGridCoord(38, 48)]: true,
-      [utils.asGridCoord(38, 49)]: true,
-      [utils.asGridCoord(38, 50)]: true,
-      [utils.asGridCoord(38, 51)]: true,
-      [utils.asGridCoord(38, 52)]: true,
-      [utils.asGridCoord(38, 53)]: true,
-      [utils.asGridCoord(38, 54)]: true,
+      // right wall arc
+      wallLine(40, 22, 40, 36),
+      wallLine(34, 37, 39, 37),
+      wallLine(34, 38, 34, 39),
+      wallAt(35, 40),
+      wallLine(36, 41, 36, 43),
+      wallAt(35, 44),
+      wallLine(34, 45, 34, 47),
+      wallLine(35, 47, 37, 47),
+      wallLine(38, 48, 38, 54),
 
       // desk and cones
-      [utils.asGridCoord(31, 52)]: true,
-      [utils.asGridCoord(32, 52)]: true,
-      [utils.asGridCoord(33, 52)]: true,
-      [utils.asGridCoord(31, 51)]: true,
-      [utils.asGridCoord(32, 51)]: true,
-      [utils.asGridCoord(33, 51)]: true,
+      wallLine(31, 51, 33, 51),
+      wallLine(31, 52, 33, 52),
+      wallAt(34, 49),
+      wallAt(30, 48),
 
-      [utils.asGridCoord(34, 49)]: true,
-      [utils.asGridCoord(30, 48)]: true,
+      // center well
+      wallLine(31, 41, 33, 41),
+      wallLine(31, 43, 33, 43),
+      wallAt(31, 42),
+      wallAt(33, 42),
 
-      // well
-      [utils.asGridCoord(31, 43)]: true,
-      [utils.asGridCoord(32, 43)]: true,
-      [utils.asGridCoord(33, 43)]: true,
+      // left seats
+      wallLine(27, 25, 29, 25),
+      wallLine(27, 27, 29, 27),
+      wallAt(27, 26),
+      wallAt(29, 26),
+      wallLine(27, 31, 29, 31),
+      wallLine(27, 33, 29, 33),
+      wallAt(27, 32),
+      wallAt(29, 32),
 
-      [utils.asGridCoord(31, 41)]: true,
-      [utils.asGridCoord(32, 41)]: true,
-      [utils.asGridCoord(33, 41)]: true,
-
-      [utils.asGridCoord(31, 42)]: true,
-      [utils.asGridCoord(33, 42)]: true,
-
-      // seats
-      [utils.asGridCoord(27, 25)]: true,
-      [utils.asGridCoord(28, 25)]: true,
-      [utils.asGridCoord(29, 25)]: true,
-
-      [utils.asGridCoord(27, 27)]: true,
-      [utils.asGridCoord(28, 27)]: true,
-      [utils.asGridCoord(29, 27)]: true,
-
-      [utils.asGridCoord(27, 26)]: true,
-      [utils.asGridCoord(29, 26)]: true,
-
-      [utils.asGridCoord(27, 31)]: true,
-      [utils.asGridCoord(28, 31)]: true,
-      [utils.asGridCoord(29, 31)]: true,
-
-      [utils.asGridCoord(27, 33)]: true,
-      [utils.asGridCoord(28, 33)]: true,
-      [utils.asGridCoord(29, 33)]: true,
-
-      [utils.asGridCoord(27, 32)]: true,
-      [utils.asGridCoord(29, 32)]: true,
-
-      [utils.asGridCoord(35, 25)]: true,
-      [utils.asGridCoord(36, 25)]: true,
-      [utils.asGridCoord(37, 25)]: true,
-
-      [utils.asGridCoord(35, 27)]: true,
-      [utils.asGridCoord(36, 27)]: true,
-      [utils.asGridCoord(37, 27)]: true,
-
-      [utils.asGridCoord(35, 26)]: true,
-      [utils.asGridCoord(37, 26)]: true,
-
-      [utils.asGridCoord(35, 31)]: true,
-      [utils.asGridCoord(36, 31)]: true,
-      [utils.asGridCoord(37, 31)]: true,
-
-      [utils.asGridCoord(35, 33)]: true,
-      [utils.asGridCoord(36, 33)]: true,
-      [utils.asGridCoord(37, 33)]: true,
-
-      [utils.asGridCoord(35, 32)]: true,
-      [utils.asGridCoord(37, 32)]: true,
-    },
+      // right seats
+      wallLine(35, 25, 37, 25),
+      wallLine(35, 27, 37, 27),
+      wallAt(35, 26),
+      wallAt(37, 26),
+      wallLine(35, 31, 37, 31),
+      wallLine(35, 33, 37, 33),
+      wallAt(35, 32),
+      wallAt(37, 32),
+    ),
     cutsceneSpaces: {
       [utils.asGridCoord(31, 55)]: [
         {

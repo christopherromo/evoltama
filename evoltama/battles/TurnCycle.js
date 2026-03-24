@@ -2,11 +2,10 @@
   this file contains the TurnCycle class, which is used to manage the turn cycle in the game.
 */
 class TurnCycle {
-  constructor({ battle, onNewEvent, onWinner, map }) {
+  constructor({ battle, onNewEvent, onWinner }) {
     this.battle = battle;
     this.onNewEvent = onNewEvent;
     this.onWinner = onWinner;
-    this.map = map;
     this.currentTeam = "player"; // or "enemy"
   }
 
@@ -25,6 +24,15 @@ class TurnCycle {
       caster,
       enemy,
     });
+
+    if (submission?.ran) {
+      await this.onNewEvent({
+        type: "textMessage",
+        text: "You ran away!",
+      });
+      this.onWinner("ran");
+      return;
+    }
 
     // stop here if we are replacing this evolisk
     if (submission.replacement) {
@@ -50,7 +58,9 @@ class TurnCycle {
       );
     }
 
-    const resultingEvents = caster.getReplacedEvents(submission.action.success);
+    const resultingEvents = submission.instanceId
+      ? submission.action.success
+      : caster.getReplacedEvents(submission.action.success);
 
     for (let i = 0; i < resultingEvents.length; i++) {
       const event = {
@@ -98,7 +108,6 @@ class TurnCycle {
       .every((combatant) => combatant.hp <= 0);
 
     if (allFainted) {
-      this.map.teleportToHealingArea();
       this.onWinner("enemy");
       return; // stop the turn if all evolisks faint
     }
@@ -150,38 +159,6 @@ class TurnCycle {
     }
 
     this.nextTurn();
-  }
-
-  async teleportToHealingArea() {
-    // example healing area coordinates (can be adjusted)
-    const healingSpotX = 5; // change this to your healing area x-coordinate
-    const healingSpotY = 5; // change this to your healing area y-coordinate
-
-    // teleport the player to the healing area
-    this.battle.map.gameObjects["hero"].x = healingSpotX * 16; // 16px per tile
-    this.battle.map.gameObjects["hero"].y = healingSpotY * 16; // 16px per tile
-
-    // optionally show a healing message
-    const healingMessage = new TextMessage({
-      text: "You've been teleported to a healing area to revive your Evolisks.",
-      onComplete: () => {
-        // heal the player's evolisks
-        this.healPlayerEvolisks();
-      },
-    });
-    healingMessage.init(this.battle.element);
-  }
-
-  healPlayerEvolisks() {
-    const playerState = window.playerState;
-
-    // restore all evolisks' hp to full
-    Object.keys(playerState.evolisks).forEach((id) => {
-      const combatant = this.battle.combatants[id];
-      if (combatant) {
-        combatant.hp = combatant.maxHp; // full restore
-      }
-    });
   }
 
   nextTurn() {

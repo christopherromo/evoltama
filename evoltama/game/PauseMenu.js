@@ -8,6 +8,10 @@ class PauseMenu {
     this.onComplete = onComplete;
   }
 
+  getEvoliskDisplayName(id) {
+    return playerState.getEvoliskDisplayName(id);
+  }
+
   getOptions(pageKey) {
     if (pageKey === "root") {
       // case 1: show the first page of options
@@ -15,7 +19,7 @@ class PauseMenu {
         const { evoliskId } = playerState.evolisks[id];
         const base = Evolisks[evoliskId];
         return {
-          label: base.name,
+          label: this.getEvoliskDisplayName(id),
           description: base.description,
           handler: () => {
             this.keyboardMenu.setOptions(this.getOptions(id));
@@ -51,7 +55,7 @@ class PauseMenu {
         const { evoliskId } = playerState.evolisks[id];
         const base = Evolisks[evoliskId];
         return {
-          label: `Swap for ${base.name}`,
+          label: `Swap for ${this.getEvoliskDisplayName(id)}`,
           description: base.description,
           handler: () => {
             playerState.swapLineup(pageKey, id);

@@ -9,7 +9,7 @@ window.Enemies = {
     evolisks: {
       a: {
         evoliskId: "ee007",
-        maxHp: 40,
+        maxHp: 35,
         level: 1,
       },
     },
@@ -20,14 +20,27 @@ window.Enemies = {
     evolisks: {
       a: {
         evoliskId: "ee003",
-        maxHp: 45,
+        maxHp: 40,
         level: 2,
       },
       b: {
+        evoliskId: "ee007",
+        maxHp: 45,
+        level: 2,
+        isMutated: true,
+        mutatedSrc: "./images/characters/evolisks/floramble-enemy.png",
+      },
+    },
+  },
+  Pip: {
+    name: "Pip",
+    src: "./images/characters/people/froggert-pip.png",
+    evolisks: {
+      a: {
         evoliskId: "ee006",
         maxHp: 50,
-        level: 2,
-      }
+        level: 3,
+      },
     },
   },
   Hoppins: {
@@ -37,12 +50,14 @@ window.Enemies = {
       a: {
         evoliskId: "ee005",
         maxHp: 55,
-        level: 3,
+        level: 4,
+        isMutated: true,
+        mutatedSrc: "./images/characters/evolisks/frigest-enemy.png",
       },
       b: {
         evoliskId: "ee008",
         maxHp: 60,
-        level: 3,
+        level: 4,
         isMutated: true,
         mutatedSrc: "./images/characters/evolisks/king-stratus-enemy.png",
       },
@@ -55,19 +70,19 @@ window.Enemies = {
       a: {
         evoliskId: "ee004",
         maxHp: 65,
-        level: 4,
+        level: 5,
         isMutated: true,
         mutatedSrc: "./images/characters/evolisks/gloomare-enemy.png",
       },
       b: {
         evoliskId: "ee002",
         maxHp: 70,
-        level: 4,
+        level: 6,
       },
       c: {
         evoliskId: "ee001",
         maxHp: 75,
-        level: 4,
+        level: 7,
       },
     },
   },

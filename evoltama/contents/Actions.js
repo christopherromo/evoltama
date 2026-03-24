@@ -7,17 +7,17 @@ window.Actions = {
   phantomCharge: {
     name: "Phantom Charge",
     description:
-      "The user calls upon their powers of Shadow to travel at high speeds towards the enemy, dealing damage.",
+      "The user calls upon their powers of shadow to travel at high speeds towards the enemy, dealing damage.",
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "phantomCharge" },
-      { type: "stateChange", damage: 10 },
+      { type: "stateChange", damage: 12 },
     ],
   },
   voidHowl: {
     name: "Void Howl",
     description:
-      "The user lets out a screeching howl channeling the depths of the void to deal heavy damage to the enemy.",
+      "The user lets out a screeching howl to deal heavy damage to the enemy.",
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "voidHowl" },
@@ -27,7 +27,7 @@ window.Actions = {
   starShatter: {
     name: "Star Shatter",
     description:
-      "The user sends forth a whirl of stars from the shadow realm dealing damage to the enemy and leaving them dazed.",
+      "The user sends forth a whirl of stars from the shadow realm, dealing damage to the enemy and leaving them dazed.",
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "starShatter" },
@@ -41,17 +41,17 @@ window.Actions = {
   astralCoil: {
     name: "Astral Coil",
     description:
-      "The user wraps their body around the enemy squeezing them tightly and dealing damage.",
+      "The user wraps their body around the enemy, squeezing them tightly and dealing damage.",
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "spin" },
-      { type: "stateChange", damage: 10 },
+      { type: "stateChange", damage: 12 },
     ],
   },
   ghostFang: {
     name: "Ghost Fang",
     description:
-      "The user channels their mythic abilities to bite the enemy from a distance dealing large amounts of damage.",
+      "The user channels their mythic abilities to bite the enemy from a distance, dealing large amounts of damage.",
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "stateChange", damage: 20 },
@@ -73,7 +73,7 @@ window.Actions = {
   paralyzingDust: {
     name: "Paralyzing Dust",
     description:
-      "The user flaps their wings, scattering dust around the environment and leaving the enemy dazed.",
+      "The user scatters dust around the environment, leaving the enemy dazed.",
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "paralyzingDust" },
@@ -87,7 +87,7 @@ window.Actions = {
   windCutter: {
     name: "Wind Cutter",
     description:
-      "The user flaps their wings violently in an X pattern to send gusts of waves at the enemy.",
+      "The user flaps their wings violently in an X pattern to send gusts at the enemy.",
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "spin" },
@@ -121,6 +121,7 @@ window.Actions = {
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "vineWhip" },
+      { type: "stateChange", damage: 12 },
       { type: "stateChange", status: { type: "dazed", expiresIn: 2 } },
       { type: "textMessage", text: "{TARGET} is entangled and dazed!" },
     ],
@@ -149,7 +150,7 @@ window.Actions = {
     success: [
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       { type: "animation", animation: "windBlast" },
-      { type: "stateChange", damage: 10 },
+      { type: "stateChange", damage: 12 },
     ],
   },
   recoverPulse: {
@@ -160,7 +161,7 @@ window.Actions = {
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       {
         type: "stateChange",
-        status: { type: "recover", expiresIn: 2 },
+        status: { type: "recover", expiresIn: 2, amount: 5, levelScale: 1 },
         onCaster: true,
       },
       {
@@ -177,7 +178,7 @@ window.Actions = {
       { type: "textMessage", text: "{CASTER} uses {ACTION}!" },
       {
         type: "stateChange",
-        status: { type: "recover", expiresIn: 3 },
+        status: { type: "recover", expiresIn: 3, amount: 8, levelScale: 2 },
         onCaster: true,
       },
       {
@@ -190,13 +191,15 @@ window.Actions = {
   // items
   item_recoverStatus: {
     name: "Green Potion",
-    description:
-      "The user may drink this potion to remove status effects.",
+    description: "The user may drink this potion to remove status effects.",
     targetType: "friendly",
     success: [
       { type: "textMessage", text: "{CASTER} drinks a {ACTION}!" },
       { type: "stateChange", status: null },
-      { type: "textMessage", text: "{CASTER} has been cured of all status effects!" },
+      {
+        type: "textMessage",
+        text: "{CASTER} has been cured of all status effects!",
+      },
     ],
   },
   item_recoverHp: {
@@ -216,6 +219,7 @@ window.Actions = {
     description: "Throw a capture disc to try and catch the wild Evolisk.",
     success: [
       { type: "textMessage", text: "You throw a {ACTION}!" },
+      { type: "animation", animation: "throwCaptureDisc" },
       { type: "attemptCatch" },
     ],
     targetType: "enemy",

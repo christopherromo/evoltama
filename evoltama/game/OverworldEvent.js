@@ -19,7 +19,7 @@ class OverworldEvent {
         type: "stand",
         direction: this.event.direction,
         time: this.event.time,
-      }
+      },
     );
 
     // set up a handler to complete when correct person is done walking, then resolve the event
@@ -43,7 +43,7 @@ class OverworldEvent {
         type: "walk",
         direction: this.event.direction,
         retry: true,
-      }
+      },
     );
 
     // set up a handler to complete when correct person is done walking, then resolve the event
@@ -61,7 +61,7 @@ class OverworldEvent {
     if (this.event.faceHero) {
       const obj = this.map.gameObjects[this.event.faceHero];
       obj.direction = utils.oppositeDirection(
-        this.map.gameObjects["hero"].direction
+        this.map.gameObjects["hero"].direction,
       );
     }
 
@@ -70,12 +70,6 @@ class OverworldEvent {
       onComplete: () => resolve(),
     });
     message.init(document.querySelector(".game-container"));
-  }
-
-  removeWall(resolve) {
-    const coord = utils.asGridCoord(this.event.x, this.event.y);
-    delete this.map.walls[coord];
-    resolve();
   }
 
   // change the current map
@@ -103,8 +97,21 @@ class OverworldEvent {
     const battle = new Battle({
       enemy: Enemies[this.event.enemyId],
       map: this.map,
-      onComplete: (didWin) => {
-        resolve(didWin ? "WON_BATTLE" : "LOST_BATTLE");
+      onComplete: (outcome) => {
+        if (outcome === "player") {
+          resolve("WON_BATTLE");
+          return;
+        }
+
+        if (outcome === "enemy") {
+          resolve("LOST_BATTLE");
+          requestAnimationFrame(() => {
+            this.map.teleportToHealingArea();
+          });
+          return;
+        }
+
+        resolve("RAN_BATTLE");
       },
       battleBackgroundSrc: this.map.battleBackgroundSrc,
     });
@@ -131,9 +138,26 @@ class OverworldEvent {
     resolve();
   }
 
+  addItem(resolve) {
+    const actionId = window.playerState.normalizeItemActionId(
+      this.event.actionId,
+    );
+    const quantity = this.event.quantity || 1;
+
+    for (let i = 0; i < quantity; i++) {
+      window.playerState.items.push({
+        actionId,
+        instanceId: `${actionId}_${Date.now()}_${Math.floor(Math.random() * 99999)}_${i}`,
+      });
+    }
+
+    resolve();
+  }
+
   evoliskMenu(resolve) {
     const menu = new EvoliskMenu({
       evolisks: this.event.evolisks,
+      rewardConfig: this.event.rewardConfig,
       onComplete: () => {
         resolve();
       },
@@ -143,18 +167,41 @@ class OverworldEvent {
 
   // puts the game into a wild battle
   async wildBattle(resolve) {
-    // pick a random wild evolisk id
-    const wildId = utils.randomFromArray([
-      "ee001",
-      "ee002",
-      "ee003",
-      "ee004",
-      "ee005",
-      "ee006",
-      "ee007",
-      "ee008",
-    ]);
+    const defaultEncounterConfig = {
+      evoliskIds: [
+        "ee001",
+        "ee002",
+        "ee003",
+        "ee004",
+        "ee005",
+        "ee006",
+        "ee007",
+        "ee008",
+      ],
+      minLevel: 1,
+      maxLevel: 1,
+    };
+    const encounterConfig =
+      this.map.wildEncounterConfig || defaultEncounterConfig;
+    const wildId = utils.randomFromArray(
+      encounterConfig.evoliskIds?.length
+        ? encounterConfig.evoliskIds
+        : defaultEncounterConfig.evoliskIds,
+    );
+    const minLevel = encounterConfig.minLevel || 1;
+    const maxLevel = encounterConfig.maxLevel || minLevel;
+    const wildLevel =
+      Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel;
 
+    const baseWildStats = {
+      maxHp: 30,
+      level: wildLevel,
+      xp: 0,
+      maxXp: 100,
+      status: null,
+    };
+
+    // pick a random wild evolisk id
     const battle = new Battle({
       map: this.map,
       enemy: {
@@ -163,23 +210,27 @@ class OverworldEvent {
         evolisks: {
           [wildId]: {
             evoliskId: wildId,
-            hp: 30,
-            maxHp: 30,
-            level: 1,
-            xp: 0,
-            maxXp: 100,
-            status: null,
+            ...baseWildStats,
           },
         },
       },
       isWildEncounter: true,
       battleBackgroundSrc: this.map.battleBackgroundSrc,
-      onComplete: (didWin) => {
-        if (didWin) {
+      onComplete: (outcome) => {
+        if (outcome === "player") {
           resolve("WON_WILD_BATTLE");
-        } else {
-          resolve("LOST_WILD_BATTLE");
+          return;
         }
+
+        if (outcome === "enemy") {
+          resolve("LOST_WILD_BATTLE");
+          requestAnimationFrame(() => {
+            this.map.teleportToHealingArea();
+          });
+          return;
+        }
+
+        resolve("RAN_BATTLE");
       },
     });
 

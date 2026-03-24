@@ -49,7 +49,7 @@ class BattleEvent {
 
       // if caster exists and has a level, scale damage based on level
       if (caster?.level) {
-        scaledDamage = Math.floor(damage + (caster.level - 1) * 5);
+        scaledDamage = Math.floor(damage + (caster.level - 1) * 6);
       }
 
       target.update({
@@ -100,7 +100,7 @@ class BattleEvent {
         return c.id !== caster.id && c.team === caster.team && c.hp > 0;
       }),
       onComplete: (submission) => {
-        // submission { what move to use, who to use it on }
+        // submission, what move to use, who to use it on
         resolve(submission);
       },
     });
@@ -108,9 +108,15 @@ class BattleEvent {
   }
 
   replacementMenu(resolve) {
+    const teamRoster =
+      this.event.team === "player"
+        ? this.battle.playerTeam.combatants
+        : this.battle.enemyTeam.combatants;
+    const activeCombatantId = this.battle.activeCombatants[this.event.team];
+
     const menu = new ReplacementMenu({
-      replacements: Object.values(this.battle.combatants).filter((c) => {
-        return c.team === this.event.team && c.hp > 0;
+      replacements: teamRoster.filter((combatant) => {
+        return combatant.hp > 0 && combatant.id !== activeCombatantId;
       }),
       onComplete: (replacement) => {
         resolve(replacement);
@@ -152,8 +158,10 @@ class BattleEvent {
         // check if we've hit level up point
         if (combatant.xp === combatant.maxXp) {
           combatant.xp = 0;
-          combatant.maxXp = 50;
+          combatant.maxXp += 25;
           combatant.level += 1;
+          combatant.maxHp += 5;
+          combatant.hp += 5;
 
           // show level up message
           await new Promise((res) => {
@@ -165,6 +173,7 @@ class BattleEvent {
           });
 
           if (combatant.canMutate && Math.random() < 0.5) {
+            const oldName = combatant.name;
             combatant.mutate();
 
             // persist it to playerState
@@ -176,7 +185,10 @@ class BattleEvent {
 
             await new Promise((res) => {
               const mutationEvent = new BattleEvent(
-                { type: "textMessage", text: `${combatant.name} has mutated!` },
+                {
+                  type: "textMessage",
+                  text: `${oldName} has mutated into ${combatant.name}!`,
+                },
                 this.battle,
               );
               mutationEvent.init(res);
@@ -207,15 +219,12 @@ class BattleEvent {
     const target = this.battle.combatants[enemyId];
 
     if (!target) {
-      console.error("Capture error: enemy target not found!", {
-        enemyId,
-        activeCombatants: this.battle.activeCombatants,
-      });
       resolve();
       return;
     }
 
     const hpPercent = target.hp / target.maxHp;
+    const levelPenalty = Math.max(0, (target.level || 1) - 1) * 0.1;
     let baseCatchChance = 1;
 
     if (hpPercent < 0.25) {
@@ -228,10 +237,13 @@ class BattleEvent {
       baseCatchChance = 0.3;
     }
 
-    const didCatch = Math.random() < baseCatchChance;
+    const catchChance = Math.max(0.1, baseCatchChance - levelPenalty);
+    const didCatch = Math.random() < catchChance;
 
     if (didCatch) {
-      window.playerState.addEvolisk(target.evoliskId);
+      window.playerState.addEvolisk(target.evoliskId, {
+        level: target.level,
+      });
       const message = new TextMessage({
         text: `You captured ${target.name}!`,
         onComplete: () => {
@@ -254,35 +266,6 @@ class BattleEvent {
       });
       message.init(this.battle.element);
     }
-  }
-
-  showCapturePopup(name, resolve) {
-    const container = document.querySelector(".game-container");
-
-    const popup = document.createElement("div");
-    popup.classList.add("capture-popup");
-    popup.innerHTML = `
-      <div class="capture-popup-inner">
-        You caught <strong>${name}</strong>!
-      </div>
-    `;
-
-    container.appendChild(popup);
-
-    // animate popup appearance
-    popup.classList.add("pop-in");
-
-    setTimeout(() => {
-      popup.classList.add("pop-out");
-      popup.addEventListener(
-        "animationend",
-        () => {
-          popup.remove();
-          resolve({ caught: true });
-        },
-        { once: true },
-      );
-    }, 1500); // show for 1.5 seconds
   }
 
   init(resolve) {

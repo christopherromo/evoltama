@@ -22,7 +22,7 @@
 
    - **Progression:** Various interactions progress the story, allowing for different areas and new dialogue to be unlocked. Game progression can be saved though the pause menu.
 
-   - **Turn-Based Battle System:** Players can form their team of Evolisks, and battle other Evolisks. On their turn, the player can choose from a list of options. The player can either win or lose the battle.
+   - **Turn-Based Battle System:** Players can form their team of Evolisks, and battle other Evolisks. On their turn, the player can choose from a list of options. The player can either win or lose battles.
 
    - **Evolisk Mutation:** Throughout the game, Evolisks are awarded with XP upon winning a battle and can level up. Certain Evolisks can randomly mutate when leveling up, changing their appearance.
 
